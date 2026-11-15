@@ -47,7 +47,9 @@ export const MEDIA_PLAYER_ANY = "any";
 export type MusicSettings = {
     media_player?: string,
     auto_start?: "never" | "follow" | "always",
-    when_on?: boolean
+    when_on?: boolean,
+    /** lights off and on again while the music plays: continue the music scene (3.5.1, default off) */
+    resume?: boolean
 };
 
 export const toList = (value: any): Array<string> => {

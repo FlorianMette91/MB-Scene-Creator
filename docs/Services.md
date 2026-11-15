@@ -52,6 +52,8 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 | `stop_dynamic_scenes_for_targets` | `targets` – stops every dynamic scene that uses one of these lights |
 | `stop_all_dynamic_scenes` | – |
 
+All three also end a [music scene](Music%20scenes.md) on these lights; the lights stay as they are.
+
 `get_dynamic_scenes` returns the running dynamic scenes (also as websocket command
 `scene_studio/get_dynamic_scenes`).
 
@@ -69,7 +71,7 @@ Returns the stored scene, including its `id`.
 | `targets` | yes | Lights of the scene |
 | `id` | | ID of an existing scene to overwrite (the entity keeps its ID) |
 | `dynamic` | | Start a dynamic scene instead of applying the preset once |
-| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on) – see [music scenes](Music%20scenes.md) |
+| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on), `resume` (continue when the lights were off and come back on within 30 minutes; default `false`) – see [music scenes](Music%20scenes.md) |
 | all fields of `apply_preset` / `start_dynamic_scene` | | stored with the scene |
 
 ### `activate_saved_scene`

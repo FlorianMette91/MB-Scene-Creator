@@ -29,7 +29,10 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     colors of the album cover of a speaker. Colors live in `RUNTIME_PRESETS` (`file_utils.py`,
     `music_<scene id>`), which `apply_preset` checks first. Sessions per scene: snapshot of the lights,
     auto start (`never`/`follow`/`always`, `when_on`), cover/track changes, return to the snapshot
-    30 s after the music stops. Other scenes on the same lights end a session (`release_lights`).
+    30 s after the music stops. Other scenes on the same lights end a session (`release_lights`): scenes
+    of Scene Studio, scenes of Home Assistant (`call_service` event of `scene.turn_on` / `scene.apply`)
+    and the stop services. Lights off ends it too (option `resume`: pause for 30 min instead). A scene
+    ended by hand is `_dismissed`: no auto start until its speaker was silent for `STOP_DELAY`.
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
