@@ -290,7 +290,8 @@ export const SceneEditor: React.FunctionComponent<{
         if (musicOn) {
             payload.music = {
                 auto_start: music.auto_start ?? "never",
-                when_on: music.auto_start !== "never" && !!music.when_on
+                when_on: music.auto_start !== "never" && !!music.when_on,
+                resume: !!music.resume
             };
             if (music.media_player) {
                 payload.music.media_player = music.media_player;
@@ -489,6 +490,13 @@ export const SceneEditor: React.FunctionComponent<{
                                             className={"scene-music-when-on"}
                                         />
                                     }
+                                    <SwitchRow
+                                        label={t("music_resume")}
+                                        value={!!music.resume}
+                                        onChange={(v) => setMusic({...music, resume: v})}
+                                        className={"scene-music-resume"}
+                                    />
+                                    <div className={"sp-secondary sp-small"}>{t(music.resume ? "music_resume_help_on" : "music_resume_help_off")}</div>
                                     <div className={"sp-secondary sp-small"}>{t("music_end_help")}</div>
                                 </div>
                             }

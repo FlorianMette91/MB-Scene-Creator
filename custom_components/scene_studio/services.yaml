@@ -224,7 +224,7 @@ start_dynamic_scene:
 
 stop_dynamic_scene:
   name: "Stop dynamic scene"
-  description: Stop a dynamic scene by ID
+  description: Stop a dynamic scene by ID. A music scene on its lights ends too
   fields:
     id:
       name: ID
@@ -236,7 +236,7 @@ stop_dynamic_scene:
 
 stop_dynamic_scenes_for_targets:
   name: "Stop dynamic scenes for targets"
-  description: Stops all dynamic scenes that include any of the specified targets
+  description: Stops all dynamic scenes and music scenes that include any of the specified targets
   fields:
     targets:
       name: "Targets"
@@ -251,7 +251,7 @@ stop_dynamic_scenes_for_targets:
 
 stop_all_dynamic_scenes:
   name: "Stop all dynamic scenes"
-  description: Stops all currently running dynamic scenes
+  description: Stops all currently running dynamic scenes and music scenes
 
 save_scene:
   name: "Save scene"
@@ -390,8 +390,8 @@ save_scene:
           mode: slider
     music:
       name: "Music scene"
-      description: "Optional. Makes this a music scene: the colors come from the album cover of the media player (media_player: an entity, or \"any\" for whichever speaker is playing), the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
-      example: '{"media_player": "media_player.living_room", "auto_start": "follow", "when_on": false}'
+      description: "Optional. Makes this a music scene: the colors come from the album cover of the media player (media_player: an entity, or \"any\" for whichever speaker is playing), the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway. resume: true continues the scene when its lights were turned off and come back on within 30 minutes while the music plays (default false: lights off ends it)."
+      example: '{"media_player": "media_player.living_room", "auto_start": "follow", "when_on": false, "resume": false}'
       selector:
         object:
 

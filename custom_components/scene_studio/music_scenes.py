@@ -17,6 +17,7 @@ import time
 from dataclasses import dataclass, field
 from urllib.parse import parse_qs, urlsplit
 
+from homeassistant.const import EVENT_CALL_SERVICE
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -174,6 +175,12 @@ class MusicScenes:
         self._unsub_registry = hass.bus.async_listen(
             er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_change
         )
+        # A scene of Home Assistant (scene.turn_on, scene.apply) on these lights ends a music scene
+        self._unsub_services = hass.bus.async_listen(
+            EVENT_CALL_SERVICE, self._on_service_call, event_filter=self._is_scene_call
+        )
+        self._stopped_at: dict[str, float] = {}  # media player -> when it last stopped playing
+        self._dismissed: set[str] = set()  # scenes ended by hand: no auto start until the music paused
         self._subscribe_players()
 
     # ------------------------------------------------------------------ helpers
@@ -373,11 +380,16 @@ class MusicScenes:
         if session is None or self.is_internal() or not session.applied:
             return
         if not any(self._is_on(entity_id) for entity_id in session.lights):
-            # Lights turned off by hand (or by a motion light): the music scene pauses. If the lights
-            # come back on soon while the music plays, it continues with the current cover.
-            _LOGGER.debug("Music scene %s paused, all lights off", scene_id)
-            self._sleep(session)
+            # Lights turned off by hand (or by a motion light): the music scene ends. Only with the
+            # option "resume" it pauses instead and continues with the current cover when the lights
+            # come back on soon while the music plays.
+            scene = self.store.get(scene_id)
+            if scene is not None and (scene.get(ATTR_MUSIC) or {}).get("resume", False):
+                _LOGGER.debug("Music scene %s paused, all lights off", scene_id)
+                self._sleep(session)
+            self._dismissed.add(scene_id)
             self._drop(scene_id)
+            self._stop_loop(scene_id)
 
     def _sleep(self, session: MusicSession):
         self._wake_cancel(session.scene_id)
@@ -430,6 +442,13 @@ class MusicScenes:
         new = event.data.get("new_state")
         was_playing = old is not None and old.state == "playing"
         playing = new is not None and new.state == "playing"
+        # A music scene that was ended by hand stays off while this music goes on: it may start by
+        # itself again only after a real break. Many players leave "playing" for a moment between two
+        # tracks, which would otherwise count as "music starts".
+        stopped_at = self._stopped_at.get(player)
+        after_break = stopped_at is None or time.monotonic() - stopped_at >= STOP_DELAY
+        if was_playing and not playing:
+            self._stopped_at[player] = time.monotonic()
 
         for scene in self._music_scenes():
             session = self.sessions.get(scene["id"])
@@ -461,6 +480,10 @@ class MusicScenes:
                         self.hass, STOP_DELAY, functools.partial(self._stop_after_music, scene["id"])
                     )
             elif playing and not was_playing:
+                if scene["id"] in self._dismissed:
+                    if not after_break:
+                        continue
+                    self._dismissed.discard(scene["id"])
                 if self._may_auto_start(scene):
                     self.hass.async_create_task(self.async_activate(scene))
 
@@ -486,6 +509,7 @@ class MusicScenes:
         """Start (or re-select) a music scene."""
         scene_id = scene["id"]
         self._wake_cancel(scene_id)
+        self._dismissed.discard(scene_id)
         player = self._player_of(scene)
         lights = self._scene_lights(scene)
         previous = self.sessions.get(scene_id)
@@ -701,11 +725,59 @@ class MusicScenes:
             lights.update(resolve_entity_ids(self.hass, entity_id))
         for scene_id, session in list(self.sessions.items()):
             if lights & set(session.lights):
+                self._dismissed.add(scene_id)
                 self._drop(scene_id)
+                self._stop_loop(scene_id)
         for scene_id in list(self._sleeping):
             scene = self.store.get(scene_id)
             if scene is None or lights & set(self._scene_lights(scene)):
                 self._wake_cancel(scene_id)
+
+    @callback
+    def stop_all(self) -> None:
+        """Stop everything (service stop_all_dynamic_scenes): the lights stay as they are."""
+        if self.is_internal():
+            return
+        for scene_id in list(self.sessions):
+            self._dismissed.add(scene_id)
+            self._drop(scene_id)
+        for scene_id in list(self._sleeping):
+            self._wake_cancel(scene_id)
+
+    @staticmethod
+    @callback
+    def _is_scene_call(event_data) -> bool:
+        return event_data.get("domain") == "scene" and event_data.get("service") in ("turn_on", "apply")
+
+    @callback
+    def _on_service_call(self, event: Event):
+        """A scene of Home Assistant was started: music scenes on its lights end (like with a scene of
+        Scene Studio). Changing lights directly (dimming, a color, on/off) does not end them."""
+        if self.is_internal() or not (self.sessions or self._sleeping):
+            return
+        data = event.data.get("service_data") or {}
+        if event.data.get("service") == "apply":
+            entities = data.get("entities")
+            lights = list(entities) if isinstance(entities, dict) else []
+        else:
+            lights = []
+            registry = er.async_get(self.hass)
+            for scene_entity in ensure_list(data.get("entity_id")):
+                entry = registry.async_get(scene_entity)
+                if entry is not None and entry.platform == DOMAIN:
+                    continue  # our own scenes release the lights themselves when they start
+                state = self.hass.states.get(scene_entity)
+                members = state.attributes.get("entity_id") if state else None
+                lights.extend([members] if isinstance(members, str) else list(members or []))
+        if lights:
+            self.release_lights(lights)
+
+    def _stop_loop(self, scene_id: str) -> None:
+        """The color loop of an ended music scene must not go on (or come back with the lights)."""
+        preset_id = runtime_preset_id(scene_id)
+        for dynamic in list(self.manager.get_all()):
+            if dynamic.parameters.get("preset_id") == preset_id:
+                self.manager.delete_by_id(dynamic.id)
 
     def _cancel_timers(self, session: MusicSession):
         for attr in ("stop_timer", "change_timer", "unsub_lights"):
@@ -767,3 +839,4 @@ class MusicScenes:
             self._unsub_players()
         self._unsub_store()
         self._unsub_registry()
+        self._unsub_services()

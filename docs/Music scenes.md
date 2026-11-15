@@ -34,6 +34,7 @@ A new cover means new colors. When the music stops, the lights go back to how th
      whichever speaker plays – music in the kitchen colors the office too (see below).
    - **Start by itself when music starts**: *Never*, *Follow* or *Always* (see below).
    - **Also when a light is already on**: only shown for *Follow* and *Always*.
+   - **Continue when the lights come back on**: off by default (see *What happens when*).
 5. **Once** or **Dynamic**, brightness and the lights of the scene work as in any other scene. With
    **Dynamic** the cover colors drift slowly between the lights, which looks best with music.
 6. **Save**.
@@ -56,10 +57,12 @@ as for every scene.
 | Speaker *Any speaker that is playing*: music in another room | That cover. If several play, the one that started last |
 | Speaker *Any speaker that is playing*: that speaker stops, another one still plays | The scene follows the other one instead of ending |
 | The music stops or moves to another room | After 30 seconds the lights return to their state before the music scene (also *off*) |
-| You select another scene on these lights | The music scene ends, nothing is restored |
-| You (or a motion light) turn all lights of the scene off | The music scene pauses, nothing is restored |
-| The lights come back on within 30 minutes (switch, motion light, app) while the music still plays | The music scene continues with the cover playing **now** |
-| They come back on and no music plays anymore, or another scene is started on them | The music scene is over |
+| You select another scene on these lights – a scene of Scene Studio or a scene of Home Assistant (`scene.turn_on`, `scene.apply`) | The music scene ends, nothing is restored |
+| You stop it: the stop button of the panel, `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets` or `stop_all_dynamic_scenes` | The music scene ends, the lights stay as they are |
+| You dim a light or change its color yourself | The music scene goes on; the next cover sets its colors again |
+| You (or a motion light) turn all lights of the scene off | The music scene ends, nothing is restored. Lights turned on later are normal light |
+| … with **Continue when the lights come back on**: they come back on within 30 minutes (switch, motion light, app) while the music still plays | The music scene continues with the cover playing **now** |
+| … they come back on and no music plays anymore, or another scene was started on them, or it was stopped | The music scene is over |
 | Home Assistant restarts | Running music scenes are forgotten, like dynamic scenes. Select the scene again |
 
 The lights only return to their state before if the music scene actually changed them.
@@ -73,6 +76,10 @@ The lights only return to their state before if the music scene actually changed
 | **Never** (default) | … you select it. Music alone never changes the lights |
 | **Follow** | … music starts on the speaker **and** a music scene is already active in another room |
 | **Always** | … music starts on the speaker |
+
+A music scene you ended yourself (another scene, stop, lights off) does not start by itself again
+while that music goes on – only after the speaker was silent for 30 seconds. A new song is not a
+new start, also with speakers that report a short pause between two songs.
 
 By default it starts by itself only if **no light of the scene is on**. A room that is lit (with
 another scene, for reading, …) is left alone. Turn on **Also when a light is already on** if the

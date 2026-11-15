@@ -369,10 +369,10 @@ async def test_saturation_of_a_scene(hass: HomeAssistant, monkeypatch, userdata)
 
 
 async def test_lights_back_on_continue_with_the_current_cover(hass: HomeAssistant, monkeypatch, userdata):
-    """A motion light turns the lights off and later on again (plain light.turn_on): while the music
-    still plays, the music scene continues with the cover playing now, not with the old colors."""
+    """Option resume: a motion light turns the lights off and later on again (plain light.turn_on):
+    while the music still plays, the music scene continues with the cover playing now."""
     fetched = await music_setup(hass, monkeypatch)
-    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER)
+    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER, resume=True)
     player(hass, PLAYER, "playing", album="Album 1")
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
@@ -392,7 +392,7 @@ async def test_lights_back_on_continue_with_the_current_cover(hass: HomeAssistan
 
 async def test_lights_back_on_without_music_or_other_scene(hass: HomeAssistant, monkeypatch, userdata):
     await music_setup(hass, monkeypatch)
-    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER)
+    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER, resume=True)
     player(hass, PLAYER, "playing")
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
@@ -428,3 +428,181 @@ async def test_any_speaker_ignores_tv_sound(hass: HomeAssistant, monkeypatch, us
     await hass.async_block_till_done()
     assert music(hass).sessions[scene_id].media_player == PLAYER
     assert fetched == [key("Kitchen")]
+
+
+async def activate(hass, scene_id):
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+
+
+async def test_lights_back_on_stay_plain_light_by_default(hass: HomeAssistant, monkeypatch, userdata):
+    """Without the option resume a music scene is over once its lights were off: lights turned on
+    again (by hand or by a motion light) are normal light, also while the music still plays."""
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
+    await activate(hass, scene_id)
+    await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions and not music(hass)._sleeping
+
+    await hass.services.async_call("light", "turn_on", {"entity_id": LIGHTS}, blocking=True)
+    player(hass, PLAYER, "playing", album="Album 2")
+    await wait(hass, 6)
+    assert scene_id not in music(hass).sessions
+    assert fetched == [key("Album 1")]
+
+
+@pytest.mark.parametrize(("service", "data"), [
+    ("stop_all_dynamic_scenes", {}),
+    ("stop_dynamic_scenes_for_targets", {"targets": {"entity_id": LIGHTS}}),
+])
+async def test_stop_services_end_the_music_scene(hass: HomeAssistant, monkeypatch, userdata, service, data):
+    """Stop means stop: the next cover does not bring the colors back."""
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
+    await activate(hass, scene_id)
+    assert scene_id in music(hass).sessions
+
+    await hass.services.async_call("scene_studio", service, data, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+    assert all(on(hass, light) for light in LIGHTS)  # the lights stay as they are
+
+    player(hass, PLAYER, "playing", album="Album 2")
+    await wait(hass, 6)
+    assert scene_id not in music(hass).sessions
+    assert fetched == [key("Album 1")]
+
+
+async def test_stopping_the_color_loop_ends_the_music_scene(hass: HomeAssistant, monkeypatch, userdata):
+    """The stop button of the panel stops the running dynamic scene by its id."""
+    fetched = await music_setup(hass, monkeypatch)
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "dynamic": True,
+        "interval": 60, "music": {"media_player": PLAYER},
+    }, blocking=True, return_response=True)
+    scene_id = r["scene"]["id"]
+    player(hass, PLAYER, "playing")
+    # no async_block_till_done while the color loop runs: it would wait for the loop to end
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    running = runtime(hass).dynamic_scenes.get_all()
+    assert len(running) == 1 and scene_id in music(hass).sessions
+
+    await hass.services.async_call("scene_studio", "stop_dynamic_scene", {"id": running[0].id}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+
+    player(hass, PLAYER, "playing", album="Album 2")
+    await wait(hass, 6)
+    assert not runtime(hass).dynamic_scenes.get_all()
+    assert fetched == [key("Album 1")]
+
+
+async def test_scene_of_home_assistant_ends_the_music_scene_dimming_does_not(
+    hass: HomeAssistant, monkeypatch, userdata
+):
+    await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
+    await activate(hass, scene_id)
+
+    # dimming or changing a light by hand: the music scene goes on
+    await hass.services.async_call("light", "turn_on", {"entity_id": LIGHTS, "brightness": 40}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+
+    # a scene on other lights: no effect
+    hass.states.async_set("scene.elsewhere", "unknown", {"entity_id": LIGHTS_2})
+    hass.bus.async_fire("call_service", {
+        "domain": "scene", "service": "turn_on", "service_data": {"entity_id": "scene.elsewhere"}})
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+
+    # a scene of Home Assistant on these lights: the music scene ends
+    hass.states.async_set("scene.white", "unknown", {"entity_id": LIGHTS})
+    hass.bus.async_fire("call_service", {
+        "domain": "scene", "service": "turn_on", "service_data": {"entity_id": ["scene.white"]}})
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+
+    # scene.apply names the lights itself
+    await activate(hass, scene_id)
+    assert scene_id in music(hass).sessions
+    hass.bus.async_fire("call_service", {
+        "domain": "scene", "service": "apply", "service_data": {"entities": {"light.a": {"state": "on"}}}})
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+
+
+async def test_selecting_a_music_scene_entity_does_not_end_it(hass: HomeAssistant, monkeypatch, userdata):
+    """scene.turn_on of the music scene itself starts it; it must not count as another scene."""
+    from homeassistant.helpers import entity_registry as er
+
+    await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    await hass.async_block_till_done()
+    entity_id = er.async_get(hass).async_get_entity_id("scene", "scene_studio", f"saved_scene_{scene_id}")
+    assert entity_id
+    player(hass, PLAYER, "playing")
+    await activate(hass, scene_id)
+    await hass.services.async_call("scene", "turn_on", {"entity_id": entity_id}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+
+
+async def test_gap_between_tracks_is_not_a_music_start(hass: HomeAssistant, monkeypatch, userdata):
+    """Auto start "always": a stopped music scene stays stopped while the music goes on, also when the
+    player leaves "playing" for a moment between two tracks. After a real break it starts again."""
+    await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER, auto_start="always", when_on=True)
+    player(hass, PLAYER, "playing")
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+
+    await hass.services.async_call("scene_studio", "stop_all_dynamic_scenes", {}, blocking=True)
+    assert scene_id not in music(hass).sessions
+
+    player(hass, PLAYER, "idle", album="Album 2")
+    player(hass, PLAYER, "playing", album="Album 2")
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+
+    player(hass, PLAYER, "paused", album="Album 2")
+    await hass.async_block_till_done()
+    music(hass)._stopped_at[PLAYER] -= 31  # the music was off for more than 30 s
+    player(hass, PLAYER, "playing", album="Album 3")
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+
+
+@pytest.mark.parametrize("ended_by", ["scene", "lights_off"])
+async def test_ended_music_scene_stops_its_color_loop(hass: HomeAssistant, monkeypatch, userdata, ended_by):
+    """A scene of Home Assistant or turning the lights off ends a dynamic music scene completely: its
+    color loop does not change the lights of the new scene and does not come back with the lights."""
+    import asyncio
+
+    await music_setup(hass, monkeypatch)
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "dynamic": True,
+        "interval": 60, "music": {"media_player": PLAYER},
+    }, blocking=True, return_response=True)
+    scene_id = r["scene"]["id"]
+    player(hass, PLAYER, "playing")
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    assert len(runtime(hass).dynamic_scenes.get_all()) == 1
+    for _ in range(20):  # let the color loop turn the lights on
+        await asyncio.sleep(0)
+    assert all(on(hass, light) for light in LIGHTS)
+
+    if ended_by == "scene":
+        hass.bus.async_fire("call_service", {
+            "domain": "scene", "service": "apply", "service_data": {"entities": {"light.a": {"state": "on"}}}})
+    else:
+        await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
+    for _ in range(5):
+        await asyncio.sleep(0)
+    assert not runtime(hass).dynamic_scenes.get_all()
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions

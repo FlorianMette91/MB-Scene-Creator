@@ -89,6 +89,8 @@ MUSIC_SCHEMA = vol.Schema({
     vol.Optional("media_player"): vol.Any(MEDIA_PLAYER_ANY, cv.entity_domain("media_player")),
     vol.Optional("auto_start", default=AUTO_START_NEVER): vol.In(AUTO_START_OPTIONS),
     vol.Optional("when_on", default=False): cv.boolean,
+    # lights off and on again within 30 minutes while the music plays: continue the music scene
+    vol.Optional("resume", default=False): cv.boolean,
 })
 
 SAVE_SCENE_SCHEMA = vol.Schema({
@@ -284,6 +286,11 @@ async def async_setup(hass, config):
         d = get_data(hass)
         scene_id = call.data.get(ATTR_DYNAMIC_SCENE_ID)
 
+        # Stopping the color loop of a music scene stops the music scene, otherwise the next cover
+        # would bring the colors back
+        scene = d.dynamic_scenes.get_by_id(scene_id)
+        if scene is not None:
+            d.music_scenes.release_lights(scene.parameters.get("light_entity_ids", []))
         d.dynamic_scenes.delete_by_id(scene_id)
 
     async def stop_dynamic_scenes_for_targets(call):
@@ -304,6 +311,7 @@ async def async_setup(hass, config):
             call.data.get(ATTR_KEEP_GROUPS),
         )
 
+        d.music_scenes.release_lights(light_entity_ids)
         # A dynamic scene may control a group as one light, so compare on member level too
         target_ids = set(light_entity_ids)
         for target_id in light_entity_ids:
@@ -319,6 +327,7 @@ async def async_setup(hass, config):
 
     async def stop_all_dynamic_scenes(call):
         d = get_data(hass)
+        d.music_scenes.stop_all()
         d.dynamic_scenes.stop_all()
 
     async def get_dynamic_scenes(call):
