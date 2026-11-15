@@ -389,6 +389,7 @@ class MusicScenes:
                 self._sleep(session)
             self._dismissed.add(scene_id)
             self._drop(scene_id)
+            self._stop_loop(scene_id)
 
     def _sleep(self, session: MusicSession):
         self._wake_cancel(session.scene_id)
@@ -726,6 +727,7 @@ class MusicScenes:
             if lights & set(session.lights):
                 self._dismissed.add(scene_id)
                 self._drop(scene_id)
+                self._stop_loop(scene_id)
         for scene_id in list(self._sleeping):
             scene = self.store.get(scene_id)
             if scene is None or lights & set(self._scene_lights(scene)):
@@ -769,6 +771,13 @@ class MusicScenes:
                 lights.extend([members] if isinstance(members, str) else list(members or []))
         if lights:
             self.release_lights(lights)
+
+    def _stop_loop(self, scene_id: str) -> None:
+        """The color loop of an ended music scene must not go on (or come back with the lights)."""
+        preset_id = runtime_preset_id(scene_id)
+        for dynamic in list(self.manager.get_all()):
+            if dynamic.parameters.get("preset_id") == preset_id:
+                self.manager.delete_by_id(dynamic.id)
 
     def _cancel_timers(self, session: MusicSession):
         for attr in ("stop_timer", "change_timer", "unsub_lights"):
