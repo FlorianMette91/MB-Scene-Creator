@@ -11,9 +11,12 @@ A new cover means new colors. When the music stops, the lights go back to how th
   There is nothing else to switch on.
 - The colors come from the cover that is playing on the speaker of the scene's room (a Sonos if
   there is one). You can also choose another speaker.
-- The lights get the **hues** of the cover, but always **vivid**: a muted or pastel cover still
+- The lights get the **hues** of the cover, but **vivid**: a muted or pastel cover still
   gives strong colors on the lamps (at least 80 % saturation). **Color intensity** in the scene
   editor makes them paler or even stronger ([Saved scenes](Saved%20scenes.md#color-intensity)).
+- You decide **which colors count** – the most vivid ones or the largest areas of the cover – and
+  which lights show the **main color** and which the **accents**
+  ([Which colors the lights get](#which-colors-the-lights-get)).
 - With the speaker *Any speaker that is playing* the scene uses the music of every room: in "any"
   mode all Sonos speakers count (without Sonos: all media players), but only while they play music
   with a cover – TV sound or line-in on a Sonos is ignored.
