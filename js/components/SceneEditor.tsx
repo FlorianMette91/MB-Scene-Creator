@@ -12,7 +12,7 @@ import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
-import {BrightnessField, Collapsible, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
+import {BrightnessField, Collapsible, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
     DEFAULT_TUNABLES, MEDIA_PLAYER_ANY, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
@@ -291,8 +291,19 @@ export const SceneEditor: React.FunctionComponent<{
             payload.music = {
                 auto_start: music.auto_start ?? "never",
                 when_on: music.auto_start !== "never" && !!music.when_on,
-                resume: !!music.resume
+                resume: !!music.resume,
+                focus: music.focus ?? 100
             };
+            // roles only for lights that are (still) part of the scene
+            const roles: {[entityId: string]: string} = {};
+            Object.entries(music.roles ?? {}).forEach(([e, role]) => {
+                if (!exclude.includes(e) && sceneLights.some(l => l.entity_id === e)) {
+                    roles[e] = role;
+                }
+            });
+            if (Object.keys(roles).length > 0) {
+                payload.music.roles = roles;
+            }
             if (music.media_player) {
                 payload.music.media_player = music.media_player;
             }
@@ -497,6 +508,8 @@ export const SceneEditor: React.FunctionComponent<{
                                         className={"scene-music-resume"}
                                     />
                                     <div className={"sp-secondary sp-small"}>{t(music.resume ? "music_resume_help_on" : "music_resume_help_off")}</div>
+                                    <FocusField t={t} value={music.focus ?? 100} onChange={(v) => setMusic({...music, focus: v})}/>
+                                    <div className={"sp-secondary sp-small"}>{t("music_roles_help")}</div>
                                     <div className={"sp-secondary sp-small"}>{t("music_end_help")}</div>
                                 </div>
                             }
@@ -582,6 +595,27 @@ export const SceneEditor: React.FunctionComponent<{
                                                         </span>
                                                     </div>
                                                     <div className={"sp-list-actions"}>
+                                                        {
+                                                            musicOn && (["main", "accent"] as const).map(role => (
+                                                                <button
+                                                                    key={role}
+                                                                    className={"sp-chip small scene-light-role-" + role + (music.roles?.[light.entity_id] === role ? " active" : "")}
+                                                                    title={t(role === "main" ? "music_role_main_help" : "music_role_accent_help")}
+                                                                    aria-pressed={music.roles?.[light.entity_id] === role}
+                                                                    onClick={() => {
+                                                                        const next = {...(music.roles ?? {})};
+                                                                        if (next[light.entity_id] === role) {
+                                                                            delete next[light.entity_id];
+                                                                        } else {
+                                                                            next[light.entity_id] = role;
+                                                                        }
+                                                                        setMusic({...music, roles: next});
+                                                                    }}
+                                                                >
+                                                                    {t(role === "main" ? "music_role_main" : "music_role_accent")}
+                                                                </button>
+                                                            ))
+                                                        }
                                                         <button
                                                             className={"sp-chip small scene-light-optional" + (isOptional ? " active" : "")}
                                                             title={t("only_if_on_help")}

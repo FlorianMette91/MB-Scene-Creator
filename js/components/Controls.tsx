@@ -216,6 +216,43 @@ export const SaturationField: React.FunctionComponent<{
     );
 };
 
+/** Music scenes: which colors of the cover count, from the largest areas (0) to the most vivid ones (100). */
+export const FocusField: React.FunctionComponent<{
+    t: Translate,
+    value: number,
+    onChange: (value: number) => void
+}> = ({t, value, onChange}) => {
+    const v = Math.round(value ?? 100);
+    return (
+        <div className={"sp-field sp-focus"}>
+            <div className={"sp-field-head"}>
+                <span>{t("music_focus")}</span>
+                <span className={"sp-secondary"}>
+                    {
+                        v !== 100 ?
+                            <button className={"sp-link focus-reset"} onClick={() => onChange(100)}>{t("music_focus_reset")}</button> :
+                            <span>{t("music_focus_default")}</span>
+                    }
+                </span>
+            </div>
+            <input
+                type={"range"}
+                className={"sp-range scene-music-focus"}
+                min={0}
+                max={100}
+                step={25}
+                value={v}
+                aria-label={t("music_focus")}
+                onChange={(e) => onChange(Number(e.target.value))}
+            />
+            <div className={"sp-secondary sp-small"} style={{display: "flex", justifyContent: "space-between"}}>
+                <span>{t("music_focus_area")}</span><span>{t("music_focus_vivid")}</span>
+            </div>
+            <div className={"sp-secondary sp-small"}>{t(v <= 25 ? "music_focus_help_area" : v >= 75 ? "music_focus_help_vivid" : "music_focus_help_mid")}</div>
+        </div>
+    );
+};
+
 /** Shuffle / transition (once) or interval / transition (dynamic). */
 export const MoreOptions: React.FunctionComponent<{
     t: Translate,

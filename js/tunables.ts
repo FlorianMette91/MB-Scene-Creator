@@ -49,7 +49,11 @@ export type MusicSettings = {
     auto_start?: "never" | "follow" | "always",
     when_on?: boolean,
     /** lights off and on again while the music plays: continue the music scene (3.5.1, default off) */
-    resume?: boolean
+    resume?: boolean,
+    /** which colors of the cover count (3.6): 100 = the most vivid ones (default), 0 = the largest areas */
+    focus?: number,
+    /** lights that show only the main color or only the accent colors of the cover (3.6) */
+    roles?: {[entityId: string]: "main" | "accent"}
 };
 
 export const toList = (value: any): Array<string> => {

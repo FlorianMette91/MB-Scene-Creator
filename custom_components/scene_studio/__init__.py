@@ -91,6 +91,10 @@ MUSIC_SCHEMA = vol.Schema({
     vol.Optional("when_on", default=False): cv.boolean,
     # lights off and on again within 30 minutes while the music plays: continue the music scene
     vol.Optional("resume", default=False): cv.boolean,
+    # which colors of the cover count (3.6): 100 = the most vivid ones (as before), 0 = the largest areas
+    vol.Optional("focus", default=100): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+    # lights that show only the main color or only the accent colors of the cover; others get all colors
+    vol.Optional("roles", default=dict): {cv.entity_id: vol.In(["main", "accent"])},
 })
 
 SAVE_SCENE_SCHEMA = vol.Schema({

@@ -71,7 +71,7 @@ Returns the stored scene, including its `id`.
 | `targets` | yes | Lights of the scene |
 | `id` | | ID of an existing scene to overwrite (the entity keeps its ID) |
 | `dynamic` | | Start a dynamic scene instead of applying the preset once |
-| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on), `resume` (continue when the lights were off and come back on within 30 minutes; default `false`) – see [music scenes](Music%20scenes.md) |
+| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on), `resume` (continue when the lights were off and come back on within 30 minutes; default `false`), `focus` (which colors of the cover count: `100` the most vivid ones, `0` the largest areas; default `100`), `roles` (lights that show only the main color or only the accent colors, for example `{"light.ceiling": "main", "light.strip": "accent"}`) – see [music scenes](Music%20scenes.md) |
 | all fields of `apply_preset` / `start_dynamic_scene` | | stored with the scene |
 
 ### `activate_saved_scene`

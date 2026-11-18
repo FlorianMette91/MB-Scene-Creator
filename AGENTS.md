@@ -33,6 +33,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     of Scene Studio, scenes of Home Assistant (`call_service` event of `scene.turn_on` / `scene.apply`)
     and the stop services. Lights off ends it too (option `resume`: pause for 30 min instead). A scene
     ended by hand is `_dismissed`: no auto start until its speaker was silent for `STOP_DELAY`.
+    Colors (3.6): `extract_cover_palette(data, focus)` returns `colors` (all), `main` and `accent`;
+    `focus` 100 = vivid (must stay identical to 3.5), 0 = largest areas. `music.roles` (light → `main` /
+    `accent`) go into the runtime preset as `roles` + `pools`; `presets.apply_preset` uses them only then.
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
