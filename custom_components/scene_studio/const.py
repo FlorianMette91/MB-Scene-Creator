@@ -53,6 +53,10 @@ MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"
 # music scene speaker: whichever speaker is playing (instead of one entity id)
 MEDIA_PLAYER_ANY = "any"
 
+# Added by andrejem (2026): built-in preset "Time of day" - a scene that stands for another saved scene
+# per phase (day, dusk, night), see daytime.py
+DAYTIME_PRESET_ID = "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63"
+
 # Added by andrejem (2026): gradient lamps show all preset colors (false = one color like any lamp)
 ATTR_GRADIENT = "gradient"
 # color intensity of a scene: -100 (pale, towards white) .. 0 (as the preset) .. 100 (vivid)

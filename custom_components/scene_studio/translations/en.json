@@ -292,5 +292,16 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "daytime": {
+        "state": {
+          "day": "Day",
+          "dusk": "Dusk",
+          "night": "Night"
+        }
+      }
+    }
   }
 }

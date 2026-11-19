@@ -55,6 +55,49 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
 
     websocket_api.async_register_command(_hass, ws_get_music_scenes)
 
+    def _daytime_state(daytime) -> dict:
+        return {
+            "phase": daytime.phase,
+            "config": daytime.config,
+            "next": [{"phase": phase, "at": when.isoformat()} for phase, when in daytime.changes(3)],
+            "following": daytime.following(),
+        }
+
+    @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_daytime"})
+    @websocket_api.callback
+    def ws_get_daytime(hass, connection, msg) -> None:
+        """Time of day: current phase, the limits and when the next phases begin."""
+        data = find_data(hass)
+        if data is None:
+            connection.send_error(msg["id"], "not_ready", "Scene Studio is not set up")
+            return
+        connection.send_result(msg["id"], _daytime_state(data.daytime))
+
+    websocket_api.async_register_command(_hass, ws_get_daytime)
+
+    DAYTIME_RULE = vol.Schema({
+        vol.Optional("elevation"): vol.Any(None, vol.All(vol.Coerce(float), vol.Range(min=-60, max=60))),
+        vol.Optional("earliest"): vol.Any(None, cv.string),
+        vol.Optional("latest"): vol.Any(None, cv.string),
+    })
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/set_daytime",
+        vol.Required("config"): vol.Schema({vol.Optional(key): DAYTIME_RULE for key in ("dusk", "night", "day")}),
+    })
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_set_daytime(hass, connection, msg) -> None:
+        """Change when dusk, night and day begin (for the whole integration)."""
+        data = find_data(hass)
+        if data is None:
+            connection.send_error(msg["id"], "not_ready", "Scene Studio is not set up")
+            return
+        await data.daytime.async_set_config(msg["config"])
+        connection.send_result(msg["id"], _daytime_state(data.daytime))
+
+    websocket_api.async_register_command(_hass, ws_set_daytime)
+
     @websocket_api.websocket_command(
         {
             vol.Required("type"): "scene_studio/resolve_targets",

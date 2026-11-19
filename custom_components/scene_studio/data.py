@@ -16,6 +16,7 @@ from .const import DOMAIN
 if TYPE_CHECKING:
     from .dynamic_scenes import DynamicSceneManager
     from .gradient import GradientLights
+    from .daytime import Daytime
     from .music_scenes import MusicScenes
     from .optional_lights import OptionalLights
     from .saved_scenes import SavedSceneStore
@@ -28,6 +29,7 @@ class SceneStudioData:
     optional_lights: OptionalLights
     music_scenes: MusicScenes
     gradient: GradientLights
+    daytime: Daytime
     # scene entities by saved scene id (scene.py), to mark a scene as activated
     scene_entities: dict = field(default_factory=dict)
 

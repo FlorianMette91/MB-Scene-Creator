@@ -101,6 +101,9 @@ class SavedSceneStore:
         if data.get("music"):
             # Music scene: colors from the album cover of a media player (music_scenes.py)
             scene["music"] = dict(data["music"])
+        if data.get("daytime"):
+            # Time of day scene: stands for another saved scene per phase (daytime.py)
+            scene["daytime"] = dict(data["daytime"])
         old = self._scenes.get(scene_id)
         if old is not None and "order" in old:
             scene["order"] = old["order"]  # editing a scene keeps its place

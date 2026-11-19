@@ -244,6 +244,8 @@ class MusicScenes:
         )
         self._stopped_at: dict[str, float] = {}  # media player -> when it last stopped playing
         self._dismissed: set[str] = set()  # scenes ended by hand: no auto start until the music paused
+        # time of day scenes that follow the phase end the same way (set by the integration)
+        self.also_release = None
         self._subscribe_players()
 
     # ------------------------------------------------------------------ helpers
@@ -835,7 +837,7 @@ class MusicScenes:
     def _on_service_call(self, event: Event):
         """A scene of Home Assistant was started: music scenes on its lights end (like with a scene of
         Scene Studio). Changing lights directly (dimming, a color, on/off) does not end them."""
-        if self.is_internal() or not (self.sessions or self._sleeping):
+        if self.is_internal() or not (self.sessions or self._sleeping or self.also_release):
             return
         data = event.data.get("service_data") or {}
         if event.data.get("service") == "apply":
@@ -853,6 +855,11 @@ class MusicScenes:
                 lights.extend([members] if isinstance(members, str) else list(members or []))
         if lights:
             self.release_lights(lights)
+            if self.also_release:
+                members = set(lights)
+                for entity_id in lights:
+                    members.update(resolve_entity_ids(self.hass, entity_id))
+                self.also_release(members)
 
     def _stop_loop(self, scene_id: str) -> None:
         """The color loop of an ended music scene must not go on (or come back with the lights)."""
