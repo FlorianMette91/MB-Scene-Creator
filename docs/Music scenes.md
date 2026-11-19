@@ -63,7 +63,18 @@ The slider in the music settings of the scene decides which color is the main co
 | **Largest areas** | The color that fills most of the cover wins, also a pale one. It stays closer to the cover (a light sky stays light blue instead of deep blue) | Light blue, red as accent |
 | in between | Both count: a color that is large and reasonably colorful wins | Light blue or red, depending on the cover |
 
-Accent colors are always vivid. Black, dark and (almost) white parts of a cover never count.
+Accent colors are always vivid. Black and dark parts of a cover never count as a color.
+
+### Covers without colors
+
+| Cover | Lights |
+|---|---|
+| White or bright without colors (also with black text or a tiny logo) | White |
+| Black or dark without colors | White, dimmed to 40 % of the brightness of the scene. The next cover with colors makes the lights bright again |
+| Mostly white with some color, slider towards **Largest areas** | White is the main color, the colors are accents. With **Most vivid** the colors win as before |
+
+Before 3.6 the lights kept the colors of the cover before. That still happens only when a cover
+cannot be read at all.
 
 ### Main and accent lights
 

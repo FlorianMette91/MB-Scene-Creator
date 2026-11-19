@@ -36,6 +36,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     Colors (3.6): `extract_cover_palette(data, focus)` returns `colors` (all), `main` and `accent`;
     `focus` 100 = vivid (must stay identical to 3.5), 0 = largest areas. `music.roles` (light → `main` /
     `accent`) go into the runtime preset as `roles` + `pools`; `presets.apply_preset` uses them only then.
+    A cover without colors gives `WHITE` (`neutral`: `white` / `dark`); a dark one adds `dim` to the
+    runtime preset, which `apply_preset` multiplies into the brightness until the next cover.
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback

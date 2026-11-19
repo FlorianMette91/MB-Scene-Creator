@@ -48,6 +48,9 @@ async def apply_preset(
         raise vol.Invalid(f"Preset '{preset_id}' not found.")
 
     brightness = brightness_override if brightness_override else preset_data.get("bri", 255)
+    # music scenes (3.6): a dark cover without colors gives white light at a part of the brightness;
+    # the next cover is applied without it, so the lights get brighter again
+    dim = preset_data.get("dim")
 
     preset_colors = [(light["x"], light["y"]) for light in preset_data["lights"]]
     # color intensity of the scene (Scene Studio 3.5): applied on top of the preset, also for music colors
@@ -75,6 +78,8 @@ async def apply_preset(
             "transition": transition,
             "entity_id": entity_id,
         }
+        if dim and light_params["brightness"]:
+            light_params["brightness"] = max(1, round(light_params["brightness"] * dim))
         hass_state = hass.states.get(entity_id)
         if not hass_state:
             continue

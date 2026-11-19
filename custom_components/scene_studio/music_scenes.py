@@ -70,6 +70,9 @@ _INTERNAL = contextvars.ContextVar("scene_studio_music_internal", default=False)
 
 # lowest saturation of a cover color on the lights
 VIVID_MIN = 0.8
+# a cover without colors (3.6): white light; for a dark cover dimmed to this part of the scene brightness
+WHITE = (0.3227, 0.329)
+DARK_DIM = 0.4
 
 
 def runtime_preset_id(scene_id: str) -> str:
@@ -80,8 +83,10 @@ def is_music_scene(scene: dict | None) -> bool:
     return bool(scene) and (scene.get(ATTR_SCENE_PRESET_ID) == MUSIC_PRESET_ID or bool(scene.get(ATTR_MUSIC)))
 
 
-def _cover_hsv(data: bytes, max_colors: int, focus: int) -> list[tuple[float, float]] | None:
-    """The colors of a cover as (hue, saturation for the light), most important first.
+def _cover_hsv(data: bytes, max_colors: int, focus: int) -> tuple[list[tuple[float, float]] | None, dict | None]:
+    """The colors of a cover as (hue, saturation for the light), most important first (None if it has
+    no usable color), and what else is known about it: ``light`` (average brightness), ``white``
+    (part of the picture that is white), ``top`` (part with the first color), ``top_sat``.
 
     ``focus`` decides what "important" means: 100 = vivid (colorful pixels weighted by saturation x
     value, so small but vivid accents count and pale colors are ignored), 0 = area (every pixel counts
@@ -99,20 +104,29 @@ def _cover_hsv(data: bytes, max_colors: int, focus: int) -> list[tuple[float, fl
     hue_x = [0.0] * bins
     hue_y = [0.0] * bins
     sat_sum = [0.0] * bins
-    colorful = 0
+    count = [0] * bins
+    colorful = white = 0
+    light = 0.0
     for r, g, b in pixels:
         hue, sat, val = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        light += val
+        if sat < 0.06 and val > 0.8:
+            white += 1
         if sat < min_sat or val < 0.25:
             continue
         colorful += 1
+        count[int(hue * bins) % bins] += 1
         w = sat * val if f == 1 else (sat * val) ** f
         k = int(hue * bins) % bins
         weight[k] += w
         hue_x[k] += w * math.cos(2 * math.pi * hue)
         hue_y[k] += w * math.sin(2 * math.pi * hue)
         sat_sum[k] += w * sat
-    if not pixels or colorful / len(pixels) < 0.03:
-        return None
+    if not pixels:
+        return None, None
+    stats = {"light": light / len(pixels), "white": white / len(pixels), "top": 0.0, "top_sat": 0.0}
+    if colorful / len(pixels) < 0.03:
+        return None, stats
 
     order = sorted(range(bins), key=lambda k: -weight[k])
     top = weight[order[0]]
@@ -134,7 +148,9 @@ def _cover_hsv(data: bytes, max_colors: int, focus: int) -> list[tuple[float, fl
         vivid_min = VIVID_MIN if hsv else 0.35 + (VIVID_MIN - 0.35) * f
         sat = vivid_min + (1.0 - vivid_min) * min(1.0, max(0.0, (cover_sat - 0.25) / 0.6))
         hsv.append((hue, sat))
-    return hsv
+    stats["top"] = count[picked[0]] / len(pixels)
+    stats["top_sat"] = sat_sum[picked[0]] / weight[picked[0]]
+    return hsv, stats
 
 
 def _xy(hsv: list[tuple[float, float]]) -> list[tuple[float, float]]:
@@ -149,15 +165,28 @@ def _xy(hsv: list[tuple[float, float]]) -> list[tuple[float, float]]:
 def extract_cover_palette(data: bytes, focus: int = 100, max_colors: int = MAX_COLORS) -> dict | None:
     """Colors of a cover as xy: ``colors`` (all, most important first), ``main`` (the most important
     color with two close variants, for main lights) and ``accent`` (the other colors, for accent
-    lights). None if the cover has no usable color.
+    lights). None only for an empty picture.
 
     Covers with only one or two colors get close variants, so a dynamic scene still has something to
     change between; a cover with a single color gets accents a bit further away from it.
+
+    A cover without colors gives white, with ``neutral`` = "white" (bright cover) or "dark" (dark
+    cover, the lights are dimmed then). A cover that is mostly white with some color gives white as
+    main color and the colors as accents, the more the focus is on areas (never for vivid).
     """
-    hsv = _cover_hsv(data, max_colors, focus)
-    if not hsv:
+    hsv, stats = _cover_hsv(data, max_colors, focus)
+    if stats is None:
         return None
-    floor = 0.35 + (VIVID_MIN - 0.35) * min(100, max(0, focus)) / 100
+    if not hsv:
+        neutral = "white" if stats["light"] >= 0.5 else "dark"
+        return {"colors": [WHITE], "main": [WHITE], "accent": [WHITE], "neutral": neutral}
+    f = min(100, max(0, focus)) / 100
+    if f < 1 and stats["white"] * (1 - f) > stats["top"]:
+        # white fills more of the cover than its first color: white is the main color
+        sat = VIVID_MIN + (1.0 - VIVID_MIN) * min(1.0, max(0.0, (stats["top_sat"] - 0.25) / 0.6))
+        accent = _xy([(hsv[0][0], sat)] + hsv[1:])
+        return {"colors": [WHITE] + accent, "main": [WHITE], "accent": accent, "neutral": None}
+    floor = 0.35 + (VIVID_MIN - 0.35) * f
     hue, sat = hsv[0]
     main = [(hue, sat), (hue + 0.03, sat), (hue - 0.03, max(floor, sat * 0.9))]
     accent = hsv[1:] or [(hue + 0.09, max(VIVID_MIN, sat)), (hue - 0.09, max(VIVID_MIN, sat))]
@@ -167,11 +196,11 @@ def extract_cover_palette(data: bytes, focus: int = 100, max_colors: int = MAX_C
             low = floor if i == 0 else VIVID_MIN
             colors.append(((h + 0.035) % 1, s))
             colors.append(((h - 0.035) % 1, max(low, s * 0.9)))
-    return {"colors": _xy(colors[: max(max_colors, 3)]), "main": _xy(main), "accent": _xy(accent)}
+    return {"colors": _xy(colors[: max(max_colors, 3)]), "main": _xy(main), "accent": _xy(accent), "neutral": None}
 
 
 def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tuple[float, float]] | None:
-    """Dominant, colorful colors of a cover as xy (vivid colors first). None if it has no usable color."""
+    """Dominant, colorful colors of a cover as xy (vivid colors first); white for a cover without colors."""
     palette = extract_cover_palette(data, 100, max_colors)
     return palette["colors"] if palette else None
 
@@ -360,6 +389,8 @@ class MusicScenes:
         if roles and pools:
             preset["roles"] = dict(roles)
             preset["pools"] = pools
+        if pools and pools.get("dim"):
+            preset["dim"] = pools["dim"]  # dark cover without colors: white, but dimmed
         RUNTIME_PRESETS[preset_id] = preset
         return preset_id
 
@@ -660,7 +691,10 @@ class MusicScenes:
         if not palette:
             return None
         self._colors[scene_id] = (album, palette["colors"])
-        self._pools[scene_id] = {"main": palette["main"], "accent": palette["accent"], "focus": focus}
+        self._pools[scene_id] = {
+            "main": palette["main"], "accent": palette["accent"], "focus": focus,
+            "dim": DARK_DIM if palette.get("neutral") == "dark" else None,
+        }
         return palette["colors"]
 
     def _schedule_cover(self, scene: dict):
@@ -707,7 +741,7 @@ class MusicScenes:
                 return
             if colors:
                 preset_id = self._set_runtime_preset(scene, colors)
-            # colorless cover: keep the colors we have, but still move them on
+            # cover that cannot be read: keep the colors we have, but still move them on
         if not session.applied:
             return
         on = [entity_id for entity_id in session.lights if self._is_on(entity_id)]
