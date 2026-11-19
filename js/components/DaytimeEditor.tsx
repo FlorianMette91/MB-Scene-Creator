@@ -13,12 +13,13 @@ import {SceneDraft} from "./SceneEditor";
 const PHASE_ICON: {[phase: string]: string} = {day: "mdi:white-balance-sunny", dusk: "mdi:weather-sunset", night: "mdi:weather-night"};
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// times are shown in the time zone of Home Assistant, not of the browser
 const clock = (hass: any, iso: string): string => {
+    const timeZone = hass?.config?.time_zone;
     const date = new Date(iso);
-    const time = date.toLocaleTimeString(hass?.locale?.language ?? undefined, {hour: "2-digit", minute: "2-digit"});
-    const days = Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() -
-        new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime()) / 86400000);
-    return days === 1 ? time + " +1" : time;
+    const time = date.toLocaleTimeString(hass?.locale?.language ?? undefined, {hour: "2-digit", minute: "2-digit", timeZone});
+    const day = (d: Date) => d.toLocaleDateString("en-CA", {timeZone});
+    return day(date) !== day(new Date()) ? time + " +1" : time;
 };
 
 /** When the next phases begin, e.g. "Dusk 16:49 · Night 22:00 · Day 07:41". */

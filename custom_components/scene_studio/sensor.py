@@ -40,4 +40,4 @@ class DaytimeSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         # when each phase begins next
-        return {f"next_{phase}": when.isoformat() for phase, when in reversed(self._daytime.changes(3))}
+        return {f"next_{phase}": when.isoformat() for phase, when in reversed(self._daytime.changes(4))}
