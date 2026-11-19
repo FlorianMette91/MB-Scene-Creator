@@ -38,6 +38,12 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     `accent`) go into the runtime preset as `roles` + `pools`; `presets.apply_preset` uses them only then.
     A cover without colors gives `WHITE` (`neutral`: `white` / `dark`); a dark one adds `dim` to the
     runtime preset, which `apply_preset` multiplies into the brightness until the next cover.
+  - `daytime.py` - time of day (3.7): the phases day, dusk, night from sun elevation and clock times
+    (`limits_of`, `phase_at`, `next_changes`; settings in their own store, one for the integration) and
+    time of day scenes: saved scenes with the preset `DAYTIME_PRESET_ID` and `daytime` (a saved scene
+    per phase, `follow`). `Daytime.async_activate` starts the scene of the phase through
+    `async_activate_scene` (`__init__.py`); with `follow` it stays active until `release_lights`
+    (called next to the one of the music scenes), stop or lights off. `sensor.py` shows the phase
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
@@ -67,7 +73,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   `App.tsx` tabs and data, `pages/ScenesPage.tsx` saved scenes by room, `pages/PresetApplyPage.tsx`
   presets tab, `components/SceneEditor.tsx` scene editor, `components/Controls.tsx` form controls,
   `components/RunningStrip.tsx` running dynamic scenes, `components/PhotoPresetDialog.tsx` presets
-  from photos, `components/ImportBanner.tsx` import from Scene Presets, `tunables.ts` settings ↔
+  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/DaytimeEditor.tsx`
+  editor of time of day scenes and the settings of the phases (opened instead of the scene editor for
+  the preset Time of day), `tunables.ts` settings ↔
   service calls, `styles.ts` CSS with Home Assistant theme variables, `i18n.ts` texts EN/DE,
   `palette.ts` color picking; `components/ColorEditor.tsx` color/white tabs (Kelvin ↔ xy); `PhotoPresetDialog.tsx` makes
   presets from colors (picture = gradient, `generated`) or photos and changes built-in presets (overrides

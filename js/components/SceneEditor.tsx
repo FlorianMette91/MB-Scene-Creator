@@ -15,7 +15,7 @@ import {Preset} from "../types";
 import {BrightnessField, Collapsible, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
-    DEFAULT_TUNABLES, MEDIA_PLAYER_ANY, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
+    DAYTIME_PRESET_ID, DEFAULT_TUNABLES, MEDIA_PLAYER_ANY, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
     sceneEntityId, tunablesToCall
 } from "../tunables";
 
@@ -44,9 +44,11 @@ export const SceneEditor: React.FunctionComponent<{
     draft: SceneDraft | null,
     presets: Array<Preset>,
     favoritePresets: Array<string>,
+    /** the preset "Time of day" was picked: it has its own editor */
+    onDaytime?: (draft: SceneDraft) => void,
     onClose: () => void,
     onSaved: () => void
-}> = ({hass, t, draft, presets, favoritePresets, onClose, onSaved}) => {
+}> = ({hass, t, draft, presets, favoritePresets, onDaytime, onClose, onSaved}) => {
     const hassRef = useRef(hass);
     hassRef.current = hass;
     const isAdmin = !!hass?.user?.is_admin;
@@ -183,11 +185,12 @@ export const SceneEditor: React.FunctionComponent<{
 
     const pickerPresets = useMemo(() => {
         const q = search.trim().toLowerCase();
-        const visible = presets.filter(p => !p.hidden);
+        // a scene that exists cannot become a time of day scene (and the other way round)
+        const visible = presets.filter(p => !p.hidden && (p.id !== DAYTIME_PRESET_ID || !draft?.scene));
         const list = q ? visible.filter(p => p.name.toLowerCase().includes(q)) : visible;
         const fav = list.filter(p => favoritePresets.includes(p.id));
         return [...fav, ...list.filter(p => !favoritePresets.includes(p.id))];
-    }, [presets, search, favoritePresets]);
+    }, [presets, search, favoritePresets, draft]);
 
     // a new scene is named after room and preset (hooks before the early return below)
     useEffect(() => {
@@ -399,6 +402,10 @@ export const SceneEditor: React.FunctionComponent<{
                                         active={p.id === presetId}
                                         imgSrc={presetImage(p)}
                                         onClick={(id) => {
+                                            if (id === DAYTIME_PRESET_ID && onDaytime && draft && !editing) {
+                                                onDaytime({...draft, name: nameAuto ? "" : name, areaId, targets});
+                                                return;
+                                            }
                                             setPresetId(id);
                                             setPicker(false);
                                         }}

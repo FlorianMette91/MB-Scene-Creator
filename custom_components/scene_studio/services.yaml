@@ -394,6 +394,12 @@ save_scene:
       example: '{"media_player": "media_player.living_room", "auto_start": "follow", "when_on": false, "resume": false}'
       selector:
         object:
+    daytime:
+      name: "Time of day scene"
+      description: "Optional. Only for the preset Time of day: the scene starts another saved scene depending on the time of day. day, dusk, night: the ID of a saved scene for each (a missing one uses the time before it). follow: true changes the scene by itself when the next time of day begins while the lights are on (default false)."
+      example: '{"day": "id of a saved scene", "night": "id of a saved scene", "follow": false}'
+      selector:
+        object:
 
 delete_saved_scene:
   name: "Delete saved scene"

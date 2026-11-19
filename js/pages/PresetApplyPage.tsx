@@ -15,7 +15,7 @@ import {Category, Preset} from "../types";
 import {Translate} from "../i18n";
 import {PhotoPresetDialog} from "../components/PhotoPresetDialog";
 import {BrightnessField, Collapsible, MoreOptions, SaturationField, Segmented, TargetField, previewBrightness, resetTunables, useTargetLights} from "../components/Controls";
-import {DEFAULT_TUNABLES, MUSIC_PRESET_ID, SetTunable, Tunables, hasTargets, presetImage, targetSummary, tunablesToCall} from "../tunables";
+import {DAYTIME_PRESET_ID, DEFAULT_TUNABLES, MUSIC_PRESET_ID, SetTunable, Tunables, hasTargets, presetImage, targetSummary, tunablesToCall} from "../tunables";
 
 export const PresetApplyPage: React.FunctionComponent<{
     hass: any,
@@ -103,6 +103,11 @@ export const PresetApplyPage: React.FunctionComponent<{
     const set: SetTunable = (key, value) => setters[key](value);
 
     const handlePresetTap = (id: string) => {
+        if (id === DAYTIME_PRESET_ID) {
+            // no colors of its own: it only works as a saved scene
+            onSaveAsScene(id, targets, tun);
+            return;
+        }
         if (!hasTargets(targets)) {
             setNotice(t("need_targets"));
             return;
@@ -163,7 +168,7 @@ export const PresetApplyPage: React.FunctionComponent<{
             onClick={(id) => handlePresetTap(id)}
             isFav={favoritePresets.includes(preset.id)}
             onFavClick={(id) => toggleFavorite(id)}
-            actionIcon={isAdmin && preset.id !== MUSIC_PRESET_ID ? "mdi:pencil" : undefined}
+            actionIcon={isAdmin && preset.id !== MUSIC_PRESET_ID && preset.id !== DAYTIME_PRESET_ID ? "mdi:pencil" : undefined}
             actionLabel={t("edit")}
             onActionClick={isAdmin ? (id) => {
                 setPhotoPresetId(id);

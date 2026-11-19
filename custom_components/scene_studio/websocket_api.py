@@ -16,6 +16,9 @@ from .custom_presets import CustomPresetError, save_preset, delete_preset, set_h
 from .file_utils import async_reload_preset_data
 from .data import find_data
 
+from homeassistant.util import dt as dt_util
+from .daytime import next_changes, normalize, phase_at
+
 LIGHT_COLOR = vol.Schema({vol.Required("x"): vol.Coerce(float), vol.Required("y"): vol.Coerce(float)})
 
 def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=None) -> None:
@@ -97,6 +100,28 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         connection.send_result(msg["id"], _daytime_state(data.daytime))
 
     websocket_api.async_register_command(_hass, ws_set_daytime)
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/preview_daytime",
+        vol.Required("config"): vol.Schema({vol.Optional(key): DAYTIME_RULE for key in ("dusk", "night", "day")}),
+    })
+    @websocket_api.callback
+    def ws_preview_daytime(hass, connection, msg) -> None:
+        """What these limits would give (nothing is saved): the phase now and the next changes."""
+        data = find_data(hass)
+        if data is None:
+            connection.send_error(msg["id"], "not_ready", "Scene Studio is not set up")
+            return
+        config = normalize(msg["config"])
+        now = dt_util.now()
+        observer = data.daytime.observer
+        connection.send_result(msg["id"], {
+            "phase": phase_at(observer, config, now),
+            "config": config,
+            "next": [{"phase": phase, "at": when.isoformat()} for phase, when in next_changes(observer, config, now, 3)],
+        })
+
+    websocket_api.async_register_command(_hass, ws_preview_daytime)
 
     @websocket_api.websocket_command(
         {

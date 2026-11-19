@@ -72,6 +72,7 @@ Returns the stored scene, including its `id`.
 | `id` | | ID of an existing scene to overwrite (the entity keeps its ID) |
 | `dynamic` | | Start a dynamic scene instead of applying the preset once |
 | `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on), `resume` (continue when the lights were off and come back on within 30 minutes; default `false`), `focus` (which colors of the cover count: `100` the most vivid ones, `0` the largest areas; default `100`), `roles` (lights that show only the main color or only the accent colors, for example `{"light.ceiling": "main", "light.strip": "accent"}`) – see [music scenes](Music%20scenes.md) |
+| `daytime` | | Only for the preset Time of day: the ID of a saved scene for `day`, `dusk` and `night`, and `follow` (change with the time of day while the lights are on; default `false`) – see [Time of day scenes](Time%20of%20day.md) |
 | all fields of `apply_preset` / `start_dynamic_scene` | | stored with the scene |
 
 ### `activate_saved_scene`
@@ -132,6 +133,7 @@ data:
 | `scene_studio/get_dynamic_scenes` | List running dynamic scenes |
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
 | `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
+| `scene_studio/get_daytime`, `preview_daytime`, `set_daytime` | Time of day: current phase, limits and next changes; what other limits would give; change the limits (admins) |
 | `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
 | `scene_studio/set_preset_hidden` | Hide a built-in preset or show it again (admins) |
 | `scene_studio/set_scene_order` | Order of the saved scenes, `scene_ids` in the new order (admins) |

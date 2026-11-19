@@ -34,8 +34,25 @@ export type SavedScene = {
     targets: HaTargetSelectorValue,
     dynamic: boolean,
     music?: MusicSettings,
+    daytime?: DaytimeSceneSettings,
     [key: string]: any
 };
+
+/** Built-in preset "Time of day": the scene stands for another saved scene per phase (added in 3.7). */
+export const DAYTIME_PRESET_ID = "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63";
+export type DaytimePhase = "day" | "dusk" | "night";
+export const PHASES: Array<DaytimePhase> = ["day", "dusk", "night"];
+/** One limit: the sun passes this elevation, not before "earliest" and at the latest at "latest" (HH:MM). */
+export type DaytimeRule = {elevation: number | null, earliest: string | null, latest: string | null};
+export type DaytimeConfig = {[phase in DaytimePhase]: DaytimeRule};
+export type DaytimeState = {
+    phase: DaytimePhase,
+    config: DaytimeConfig,
+    next: Array<{phase: DaytimePhase, at: string}>,
+    following: Array<string>
+};
+/** Settings of a time of day scene: the id of a saved scene per phase, follow = change with the phase. */
+export type DaytimeSceneSettings = {day?: string, dusk?: string, night?: string, follow?: boolean};
 
 /** Built-in preset "Music": the colors come from the album cover of a speaker (added in 3.2). */
 export const MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42";

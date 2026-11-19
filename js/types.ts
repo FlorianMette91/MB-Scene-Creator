@@ -19,5 +19,6 @@ export type Preset = {
     user_hidden?: boolean, // hidden by the user in the panel (can be shown again)
     generated?: boolean, // picture made from the colors
     replacedBy?: string,
-    music?: boolean
+    music?: boolean,
+    daytime?: boolean
 }
