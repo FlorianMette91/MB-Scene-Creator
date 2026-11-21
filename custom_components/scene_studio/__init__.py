@@ -26,13 +26,14 @@ from .websocket_api import async_setup_websocket_api
 from .saved_scenes import SavedSceneStore, build_service_call
 from .optional_lights import OptionalLights, split_optional
 from .migrate import async_import_scene_presets
+from .daytime import Daytime, PHASES, is_daytime_scene
 from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
 from .gradient import GradientLights
 from .data import SceneStudioConfigEntry, SceneStudioData, get_data
 from .file_utils import async_ensure_directories, async_reload_preset_data
 
-PLATFORMS = ["scene"]
+PLATFORMS = ["scene", "sensor"]
 
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
@@ -91,6 +92,17 @@ MUSIC_SCHEMA = vol.Schema({
     vol.Optional("when_on", default=False): cv.boolean,
     # lights off and on again within 30 minutes while the music plays: continue the music scene
     vol.Optional("resume", default=False): cv.boolean,
+    # which colors of the cover count (3.6): 100 = the most vivid ones (as before), 0 = the largest areas
+    vol.Optional("focus", default=100): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+    # lights that show only the main color or only the accent colors of the cover; others get all colors
+    vol.Optional("roles", default=dict): {cv.entity_id: vol.In(["main", "accent"])},
+})
+
+# Time of day scene (3.7): the id of another saved scene per phase; "follow" changes the scene by
+# itself when the phase changes while it is active
+DAYTIME_SCHEMA = vol.Schema({
+    **{vol.Optional(phase): vol.Any(None, cv.string) for phase in PHASES},
+    vol.Optional("follow", default=False): cv.boolean,
 })
 
 SAVE_SCENE_SCHEMA = vol.Schema({
@@ -115,6 +127,7 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
     vol.Optional("music"): MUSIC_SCHEMA,
+    vol.Optional("daytime"): DAYTIME_SCHEMA,
 })
 
 SAVED_SCENE_ID_SCHEMA = vol.Schema({
@@ -155,6 +168,61 @@ def _detach_from_dynamic_scenes(hass, light_entity_ids):
                 scene.remove_light(entity_id)
 
 
+def _lights_of(hass, targets, exclude=None):
+    entity_ids = ensure_list(targets.get("entity_id"))
+    return filter_targets(
+        hass,
+        resolve_targets(
+            hass,
+            entity_ids,
+            ensure_list(targets.get("device_id")),
+            ensure_list(targets.get("area_id")),
+            ensure_list(targets.get("floor_id")),
+            ensure_list(targets.get("label_id")),
+        ),
+        entity_ids,
+        exclude,
+    )
+
+async def async_activate_scene(hass, scene, override=None, dynamic=None, transition=None):
+    """Start a saved scene (not a time of day scene) and return the lights it was put on."""
+    d = get_data(hass)
+    scene_id = scene["id"]
+    if is_music_scene(scene) and not override:
+        await d.music_scenes.async_activate(scene)
+        return _lights_of(hass, scene.get(ATTR_TARGETS) or {}, scene.get(ATTR_EXCLUDE))
+
+    service, service_data = build_service_call(scene, dynamic)
+    if transition is not None and service == SERVICE_APPLY_PRESET:
+        service_data[ATTR_TRANSITION] = transition
+    if is_music_scene(scene) and runtime_preset_id(scene_id) in RUNTIME_PRESETS:
+        # A lamp mode of a music scene shows the current cover colors
+        service_data[ATTR_SCENE_PRESET_ID] = runtime_preset_id(scene_id)
+    if override:
+        # Apply the saved scene to other lights, e.g. one lamp of the room (lamp modes)
+        for key in (ATTR_EXCLUDE, ATTR_KEEP_GROUPS, ATTR_OPTIONAL):
+            service_data.pop(key, None)
+        service_data[ATTR_TARGETS] = override
+        # A lamp mode turns these lamps on: 0 % (off) does not apply, they get the scene brightness
+        if service_data.get(ATTR_LIGHT_BRIGHTNESS):
+            service_data[ATTR_LIGHT_BRIGHTNESS] = {
+                key: value for key, value in service_data[ATTR_LIGHT_BRIGHTNESS].items() if value > 0
+            }
+        lights = _lights_of(hass, override)
+        # These lights leave running dynamic scenes, the other lights of those scenes keep going
+        _detach_from_dynamic_scenes(hass, lights)
+    else:
+        lights = _lights_of(hass, scene.get(ATTR_TARGETS) or {}, scene.get(ATTR_EXCLUDE))
+        if service == SERVICE_APPLY_PRESET:
+            # A running dynamic scene on these lights would immediately override the static one
+            await hass.services.async_call(
+                DOMAIN, SERVICE_STOP_DYNAMIC_SCENES_FOR_TARGETS,
+                {ATTR_TARGETS: service_data[ATTR_TARGETS]}, blocking=True,
+            )
+    await hass.services.async_call(DOMAIN, service, service_data, blocking=True)
+    return lights
+
+
 async def async_setup(hass, config):
     # Services are registered once; they work on the runtime data of the loaded config entry.
 
@@ -162,6 +230,8 @@ async def async_setup(hass, config):
         d = get_data(hass)
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
+        if preset_id == DAYTIME_PRESET_ID:
+            raise vol.Invalid("The preset 'Time of day' has no colors: save it as a scene and choose a scene per time of day.")
         if preset_id == MUSIC_PRESET_ID:
             # Colors of the cover playing in the room right now; no music, nothing happens
             preset_id = await d.music_scenes.async_adhoc_preset(targets)
@@ -191,6 +261,7 @@ async def async_setup(hass, config):
         )
         d.optional_lights.forget_overlapping(light_entity_ids, optional_ids)
         d.music_scenes.release_lights(light_entity_ids + optional_ids)
+        d.daytime.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -220,6 +291,8 @@ async def async_setup(hass, config):
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
         interval = call.data.get(ATTR_INTERVAL)
+        if preset_id == DAYTIME_PRESET_ID:
+            raise vol.Invalid("The preset 'Time of day' has no colors: save it as a scene and choose a scene per time of day.")
         if preset_id == MUSIC_PRESET_ID:
             # Colors of the cover playing in the room right now; no music, nothing happens
             preset_id = await d.music_scenes.async_adhoc_preset(targets)
@@ -251,6 +324,7 @@ async def async_setup(hass, config):
         )
         d.optional_lights.forget_overlapping(light_entity_ids, optional_ids)
         d.music_scenes.release_lights(light_entity_ids + optional_ids)
+        d.daytime.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -291,6 +365,7 @@ async def async_setup(hass, config):
         scene = d.dynamic_scenes.get_by_id(scene_id)
         if scene is not None:
             d.music_scenes.release_lights(scene.parameters.get("light_entity_ids", []))
+            d.daytime.release_lights(scene.parameters.get("light_entity_ids", []))
         d.dynamic_scenes.delete_by_id(scene_id)
 
     async def stop_dynamic_scenes_for_targets(call):
@@ -312,6 +387,7 @@ async def async_setup(hass, config):
         )
 
         d.music_scenes.release_lights(light_entity_ids)
+        d.daytime.release_lights(light_entity_ids)
         # A dynamic scene may control a group as one light, so compare on member level too
         target_ids = set(light_entity_ids)
         for target_id in light_entity_ids:
@@ -328,6 +404,7 @@ async def async_setup(hass, config):
     async def stop_all_dynamic_scenes(call):
         d = get_data(hass)
         d.music_scenes.stop_all()
+        d.daytime.stop_all()
         d.dynamic_scenes.stop_all()
 
     async def get_dynamic_scenes(call):
@@ -359,48 +436,11 @@ async def async_setup(hass, config):
             entity = d.scene_entities.get(scene_id)
             if entity is not None:
                 entity.mark_activated()
-        if is_music_scene(scene) and not override:
-            await d.music_scenes.async_activate(scene)
+        if is_daytime_scene(scene):
+            # the scene of the current phase (day, dusk, night)
+            await d.daytime.async_activate(scene, override)
             return
-
-        service, service_data = build_service_call(scene, call.data.get(ATTR_DYNAMIC))
-        if is_music_scene(scene) and runtime_preset_id(scene_id) in RUNTIME_PRESETS:
-            # A lamp mode of a music scene shows the current cover colors
-            service_data[ATTR_SCENE_PRESET_ID] = runtime_preset_id(scene_id)
-        if override:
-            # Apply the saved scene to other lights, e.g. one lamp of the room (lamp modes)
-            for key in (ATTR_EXCLUDE, ATTR_KEEP_GROUPS, ATTR_OPTIONAL):
-                service_data.pop(key, None)
-            service_data[ATTR_TARGETS] = override
-            # A lamp mode turns these lamps on: 0 % (off) does not apply, they get the scene brightness
-            if service_data.get(ATTR_LIGHT_BRIGHTNESS):
-                service_data[ATTR_LIGHT_BRIGHTNESS] = {
-                    key: value for key, value in service_data[ATTR_LIGHT_BRIGHTNESS].items() if value > 0
-                }
-            override_entity_ids = ensure_list(override.get("entity_id"))
-            lights = filter_targets(
-                hass,
-                resolve_targets(
-                    hass,
-                    override_entity_ids,
-                    ensure_list(override.get("device_id")),
-                    ensure_list(override.get("area_id")),
-                    ensure_list(override.get("floor_id")),
-                    ensure_list(override.get("label_id")),
-                ),
-                override_entity_ids,
-                None,
-            )
-            # These lights leave running dynamic scenes, the other lights of those scenes keep going
-            _detach_from_dynamic_scenes(hass, lights)
-        elif service == SERVICE_APPLY_PRESET:
-            # A running dynamic scene on these lights would immediately override the static one
-            await hass.services.async_call(
-                DOMAIN, SERVICE_STOP_DYNAMIC_SCENES_FOR_TARGETS,
-                {ATTR_TARGETS: service_data[ATTR_TARGETS]}, blocking=True,
-            )
-        await hass.services.async_call(DOMAIN, service, service_data, blocking=True)
-
+        await async_activate_scene(hass, scene, override, call.data.get(ATTR_DYNAMIC))
 
     hass.services.async_register(
         DOMAIN,
@@ -500,17 +540,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) 
     optional_lights = OptionalLights(hass, dynamic_scenes)
     music_scenes = MusicScenes(hass, saved_scenes, dynamic_scenes)
     gradients = GradientLights(hass)
+
+    async def activate(scene, targets, transition):
+        return await async_activate_scene(hass, scene, targets, None, transition)
+
+    daytime = Daytime(hass, saved_scenes, activate)
+    await daytime.async_load()
+    music_scenes.also_release = daytime.release_lights
     entry.runtime_data = SceneStudioData(
         saved_scenes=saved_scenes,
         dynamic_scenes=dynamic_scenes,
         optional_lights=optional_lights,
         music_scenes=music_scenes,
         gradient=gradients,
+        daytime=daytime,
     )
     # stopped in reverse order on unload
     entry.async_on_unload(dynamic_scenes.stop_all)
     entry.async_on_unload(optional_lights.async_shutdown)
     entry.async_on_unload(music_scenes.async_shutdown)
+    entry.async_on_unload(daytime.async_shutdown)
 
     await async_setup_view(hass)
     async_setup_websocket_api(hass, dynamic_scenes, saved_scenes)

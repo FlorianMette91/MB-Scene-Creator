@@ -11,9 +11,12 @@ A new cover means new colors. When the music stops, the lights go back to how th
   There is nothing else to switch on.
 - The colors come from the cover that is playing on the speaker of the scene's room (a Sonos if
   there is one). You can also choose another speaker.
-- The lights get the **hues** of the cover, but always **vivid**: a muted or pastel cover still
+- The lights get the **hues** of the cover, but **vivid**: a muted or pastel cover still
   gives strong colors on the lamps (at least 80 % saturation). **Color intensity** in the scene
   editor makes them paler or even stronger ([Saved scenes](Saved%20scenes.md#color-intensity)).
+- You decide **which colors count** – the most vivid ones or the largest areas of the cover – and
+  which lights show the **main color** and which the **accents**
+  ([Which colors the lights get](#which-colors-the-lights-get)).
 - With the speaker *Any speaker that is playing* the scene uses the music of every room: in "any"
   mode all Sonos speakers count (without Sonos: all media players), but only while they play music
   with a cover – TV sound or line-in on a Sonos is ignored.
@@ -35,6 +38,7 @@ A new cover means new colors. When the music stops, the lights go back to how th
    - **Start by itself when music starts**: *Never*, *Follow* or *Always* (see below).
    - **Also when a light is already on**: only shown for *Follow* and *Always*.
    - **Continue when the lights come back on**: off by default (see *What happens when*).
+   - **Colors from the cover**: which colors count, see *Which colors the lights get*.
 5. **Once** or **Dynamic**, brightness and the lights of the scene work as in any other scene. With
    **Dynamic** the cover colors drift slowly between the lights, which looks best with music.
 6. **Save**.
@@ -42,6 +46,49 @@ A new cover means new colors. When the music stops, the lights go back to how th
 The scene gets a *Music* badge in the panel and a note symbol on the room card. It is a normal
 `scene.*` entity: dashboards, automations, voice assistants and [lamp modes](Lamp%20modes.md) work
 as for every scene.
+
+## Which colors the lights get
+
+Scene Studio takes up to five colors from the cover. The first one is the **main color**, the others
+are **accents**. Two settings decide what your lights show; if you touch neither, everything works
+as before.
+
+### Colors from the cover: largest areas or most vivid
+
+The slider in the music settings of the scene decides which color is the main color.
+
+| Slider | Main color | Example: a portrait with red glasses in front of a pale blue sky |
+|---|---|---|
+| **Most vivid** (default) | The most colorful color wins, also a small one. Pale areas are ignored | Red |
+| **Largest areas** | The color that fills most of the cover wins, also a pale one. It stays closer to the cover (a light sky stays light blue instead of deep blue) | Light blue, red as accent |
+| in between | Both count: a color that is large and reasonably colorful wins | Light blue or red, depending on the cover |
+
+Accent colors are always vivid. Black and dark parts of a cover never count as a color.
+
+### Covers without colors
+
+| Cover | Lights |
+|---|---|
+| White or bright without colors (also with black text or a tiny logo) | White |
+| Black or dark without colors | White, dimmed to 40 % of the brightness of the scene. The next cover with colors makes the lights bright again |
+| Mostly white with some color, slider towards **Largest areas** | White is the main color, the colors are accents. With **Most vivid** the colors win as before |
+
+Before 3.6 the lights kept the colors of the cover before. That still happens only when a cover
+cannot be read at all.
+
+### Main and accent lights
+
+In the list of lights of the scene, every light has the buttons **Main** and **Accent**:
+
+- **Main**: the light shows only the main color (with two close variants, so a dynamic scene still
+  moves gently). Good for the ceiling and large lights that set the mood.
+- **Accent**: the light shows only the accent colors. Good for a strip, a lamp in the corner or the
+  light behind the TV.
+- **No role** (default): the light gets all colors of the cover, mixed, as before.
+
+A cover with a single color has no real accent: accent lights then get a color a bit next to the
+main color. Gradient lamps (Hue Signe, Play gradient …) keep showing all colors as a gradient,
+starting with the color of their role. A role given to a group applies to its lights.
 
 ## What happens when
 

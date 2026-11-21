@@ -68,6 +68,12 @@ scenes, automations and service calls.
 No fixed colors: the colors come from the album cover that is playing ([music scenes](../../../docs/Music%20scenes.md)).
 
 `b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42`
+#### Time of day
+<img src="./d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63.jpeg" height="256"/>
+<br/>
+No colors of its own: a scene with this preset starts another saved scene, depending on whether it is day, dusk or night ([time of day scenes](../../../docs/Time%20of%20day.md)).
+
+`d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63`
 
 ## Sunrise
 

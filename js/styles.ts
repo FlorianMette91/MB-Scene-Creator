@@ -575,6 +575,27 @@ button { font: inherit; color: inherit; }
     background: var(--sp-soft);
     color: var(--sp-text);
 }
+/* time of day (3.7) */
+.sp-daytime-phases { display: flex; flex-direction: column; gap: 8px; }
+.sp-daytime-phase {
+    display: grid; grid-template-columns: minmax(130px, 1fr) minmax(0, 1.6fr); gap: 12px; align-items: center;
+    padding: 10px 12px; border-radius: var(--sp-radius); background: var(--sp-card); border: 1px solid var(--sp-line);
+}
+.sp-daytime-phase.now { border-color: var(--sp-accent, var(--primary-color)); box-shadow: 0 0 0 1px var(--sp-accent, var(--primary-color)) inset; }
+.sp-daytime-phase-label { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sp-daytime-phase-label > span { display: flex; flex-direction: column; min-width: 0; }
+.sp-daytime-next { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 14px; }
+.sp-daytime-next > span { display: inline-flex; align-items: center; gap: 5px; }
+.sp-daytime-now { font-weight: 600; }
+.sp-daytime-rule { padding: 12px; border-radius: var(--sp-radius); background: var(--sp-card); border: 1px solid var(--sp-line); display: flex; flex-direction: column; gap: 10px; }
+.sp-daytime-rule-head { display: flex; align-items: center; gap: 8px; }
+.sp-daytime-rule-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sp-daytime-sun { display: flex; align-items: center; gap: 6px; }
+@media (max-width: 480px) {
+    .sp-daytime-phase { grid-template-columns: 1fr; gap: 8px; }
+    .sp-daytime-rule-fields { grid-template-columns: 1fr 1fr; }
+    .sp-daytime-rule-fields > label:first-child { grid-column: 1 / -1; }
+}
 .sp-entity-id {
     display: block;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

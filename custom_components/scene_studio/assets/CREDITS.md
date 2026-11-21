@@ -9,7 +9,8 @@ the colors of each preset were taken from its photo.
   cropped versions in this folder are published under the same license.
 - The pictures of the presets in the category *Basics* are drawings by Sören Beye from
   [Scene Presets](https://github.com/Hypfer/hass-scene_presets) (Apache License 2.0), except
-  *Music* (`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42.jpeg`), drawn for Scene Studio in the same style
+  *Music* (`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42.jpeg`) and *Time of day*
+  (`d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63.jpeg`), drawn for Scene Studio in the same style
   (Apache License 2.0).
 
 Photographers keep the copyright of their photos. If you are the author of one of these photos and

@@ -12,6 +12,7 @@ the same rules the services use.
 | **Only if on** | `optional` | Takes part only if the light is on when the scene starts, joins later when it is turned on |
 | **Don't control** | `exclude` | The scene does not touch this light: it is neither turned on nor off nor changed. These lights are listed with **Control again** |
 | **As one light** | `keep_groups` | All lights of a light group get the same color. **Light by light** undoes it |
+| **Main** / **Accent** | `music.roles` | Only in music scenes: the light shows only the main color or only the accent colors of the album cover. Tap the active button again to remove the role. See [Music scenes](Music%20scenes.md#main-and-accent-lights) |
 
 ## Brightness per light, 0 % = off
 

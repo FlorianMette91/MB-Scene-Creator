@@ -9,7 +9,7 @@ import {NewTile, PresetTile} from "../components/PresetTile";
 import HaIcon from "../components/hass/building_blocks/HaIcon";
 import {useLocalStorage} from "../hooks/useLocalStorage";
 import {RunningScene} from "../components/RunningStrip";
-import {MUSIC_PRESET_ID, SavedScene, areaName, entityAreaId, presetImage, sceneAreaId, sceneEntityId, stripRoomName} from "../tunables";
+import {DAYTIME_PRESET_ID, MUSIC_PRESET_ID, SavedScene, areaName, entityAreaId, presetImage, sceneAreaId, sceneEntityId, stripRoomName} from "../tunables";
 
 const NO_ROOM = "__none__";
 
@@ -275,8 +275,8 @@ export const ScenesPage: React.FunctionComponent<{
                                     actionIcon={"mdi:pencil"}
                                     actionLabel={t("edit")}
                                     onActionClick={() => onEdit(scene)}
-                                    badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
-                                    badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : undefined}
+                                    badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : scene.preset_id === DAYTIME_PRESET_ID ? t("daytime_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
+                                    badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : scene.preset_id === DAYTIME_PRESET_ID ? "mdi:theme-light-dark" : undefined}
                                     active={activeIds.has(scene.id)}
                                 />
                             ))}

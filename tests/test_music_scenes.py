@@ -40,7 +40,8 @@ def test_extract_cover_colors():
 
     colors = extract_cover_colors(_image([(220, 20, 30), (20, 40, 200)]))
     assert colors is not None and len(colors) >= 3  # two colors plus close variants
-    assert extract_cover_colors(_image([(128, 128, 128), (10, 10, 10), (250, 250, 250)])) is None
+    # no colors at all: white light instead of no answer (3.6)
+    assert extract_cover_colors(_image([(128, 128, 128), (10, 10, 10), (250, 250, 250)])) == [(0.3227, 0.329)]
 
 
 def test_pale_cover_gives_vivid_colors():
@@ -606,3 +607,176 @@ async def test_ended_music_scene_stops_its_color_loop(hass: HomeAssistant, monke
     assert not runtime(hass).dynamic_scenes.get_all()
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
+
+
+def _sky_cover():
+    """A cover like the one of issue 13: three quarters pale blue sky, a small vivid red part, some black."""
+    image = Image.new("RGB", (96, 96), (222, 229, 250))  # pale blue
+    for x in range(96):
+        for y in range(96):
+            if y >= 84:
+                image.putpixel((x, y), (20, 18, 16))  # dark
+            elif 36 <= x < 60 and 30 <= y < 84:
+                image.putpixel((x, y), (215, 45, 50))  # vivid red, 14 % of the picture
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    return out.getvalue()
+
+
+def _hue_sat(xy):
+    import colorsys
+
+    from homeassistant.util import color as color_util
+
+    r, g, b = color_util.color_xy_to_RGB(*xy)
+    h, s, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    return h * 360, s
+
+
+def test_color_choice_from_vivid_to_area():
+    from custom_components.scene_studio.music_scenes import extract_cover_colors, extract_cover_palette
+
+    cover = _sky_cover()
+    # vivid (default, as before 3.6): the small red part wins, the pale sky is ignored
+    vivid = extract_cover_palette(cover)
+    assert vivid["colors"] == extract_cover_colors(cover)
+    hue, sat = _hue_sat(vivid["main"][0])
+    assert (hue < 15 or hue > 345) and sat > 0.8
+    assert all(not 200 < _hue_sat(c)[0] < 250 for c in vivid["colors"])
+
+    # area: the sky is the main color and stays a light blue, red is the accent
+    area = extract_cover_palette(cover, 0)
+    hue, sat = _hue_sat(area["main"][0])
+    assert 200 < hue < 250 and sat < 0.6
+    assert all(200 < _hue_sat(c)[0] < 260 for c in area["main"])
+    accent_hue = _hue_sat(area["accent"][0])[0]
+    assert accent_hue < 15 or accent_hue > 345
+
+    # one color only: the accents are variants of it, not the same color
+    single = extract_cover_palette(_image([(255, 0, 0)]))
+    assert single["accent"] and single["main"][0] not in single["accent"]
+
+
+@pytest.mark.parametrize("dynamic", [False, True])
+async def test_main_and_accent_lights(hass: HomeAssistant, monkeypatch, userdata, dynamic):
+    """Lights with a role take only the main or only the accent colors, the others all colors."""
+    import asyncio
+
+    import custom_components.scene_studio.music_scenes as ms
+
+    main, accent = [(0.15, 0.06), (0.16, 0.08)], [(0.64, 0.33), (0.3, 0.6)]
+    await music_setup(hass, monkeypatch)
+
+    async def fake_cover(self, scene_id, state):
+        self._colors[scene_id] = (self._album_key(state), main[:1] + accent)
+        self._pools[scene_id] = {"main": main, "accent": accent, "focus": 0}
+        return main[:1] + accent
+
+    monkeypatch.setattr(ms.MusicScenes, "_colors_from_cover", fake_cover)
+    lights = LIGHTS + LIGHTS_2
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": lights}, "dynamic": dynamic,
+        "interval": 60,
+        "music": {"media_player": PLAYER, "focus": 0, "roles": {lights[0]: "main", lights[1]: "accent"}},
+    }, blocking=True, return_response=True)
+    assert r["scene"]["music"]["roles"] == {lights[0]: "main", lights[1]: "accent"}
+    assert r["scene"]["music"]["focus"] == 0
+    player(hass, PLAYER, "playing")
+    for _ in range(8):  # shuffled: the roles must hold every time
+        await hass.services.async_call(
+            "scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
+        for _ in range(20):
+            await asyncio.sleep(0)
+        assert hass.states.get(lights[0]).attributes["xy_color"] in main
+        assert hass.states.get(lights[1]).attributes["xy_color"] in accent
+        assert hass.states.get(lights[2]).attributes["xy_color"] in main[:1] + accent
+    await hass.services.async_call("scene_studio", "stop_all_dynamic_scenes", {}, blocking=True)
+    await hass.async_block_till_done()
+
+
+async def test_scenes_without_roles_are_saved_with_the_defaults(hass: HomeAssistant, monkeypatch, userdata):
+    await music_setup(hass, monkeypatch)
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "music": {"media_player": PLAYER},
+    }, blocking=True, return_response=True)
+    assert r["scene"]["music"]["focus"] == 100 and r["scene"]["music"]["roles"] == {}
+
+
+def _plain(base, part=None, share=0.0):
+    """A cover in one color with a block of another color that fills ``share`` of it."""
+    image = Image.new("RGB", (100, 100), base)
+    for x in range(100):
+        for y in range(round(share * 100)):
+            image.putpixel((x, y), part)
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    return out.getvalue()
+
+
+def test_covers_without_colors_give_white():
+    from custom_components.scene_studio.music_scenes import WHITE, extract_cover_palette
+
+    for focus in (100, 50, 0):
+        white = extract_cover_palette(_plain((255, 255, 255)), focus)
+        assert white["colors"] == [WHITE] and white["main"] == [WHITE] and white["neutral"] == "white"
+        # a logo of 2 % is no color of the cover
+        assert extract_cover_palette(_plain((252, 250, 248), (220, 30, 40), 0.02), focus)["neutral"] == "white"
+        # white with black text is a bright cover, black with white text a dark one
+        assert extract_cover_palette(_plain((255, 255, 255), (15, 15, 15), 0.2), focus)["neutral"] == "white"
+        dark = extract_cover_palette(_plain((12, 12, 14), (250, 250, 250), 0.2), focus)
+        assert dark["colors"] == [WHITE] and dark["neutral"] == "dark"
+
+    # mostly white with some red: vivid = red (as before), towards areas = white with a red accent
+    cover = _plain((255, 255, 255), (215, 40, 50), 0.15)
+    vivid = extract_cover_palette(cover, 100)
+    assert vivid["neutral"] is None and WHITE not in vivid["colors"]
+    area = extract_cover_palette(cover, 0)
+    assert area["main"] == [WHITE] and area["colors"][0] == WHITE
+    hue, sat = _hue_sat(area["accent"][0])
+    assert (hue < 15 or hue > 345) and sat > 0.75
+    # mostly red with a white part stays red
+    assert extract_cover_palette(_plain((215, 40, 50), (255, 255, 255), 0.3), 0)["main"][0] != WHITE
+
+
+async def test_dark_cover_dims_and_the_next_cover_is_bright_again(hass: HomeAssistant, monkeypatch, userdata):
+    import custom_components.scene_studio.music_scenes as ms
+
+    await music_setup(hass, monkeypatch)
+    covers = {"Black": _plain((10, 10, 10)), "White": _plain((255, 255, 255)), "Red": _plain((215, 40, 50))}
+
+    async def fake_cover(self, scene_id, state):
+        palette = ms.extract_cover_palette(covers[state.attributes["media_album_name"]])
+        self._colors[scene_id] = (self._album_key(state), palette["colors"])
+        self._pools[scene_id] = {"main": palette["main"], "accent": palette["accent"], "focus": 100,
+                                 "dim": ms.DARK_DIM if palette["neutral"] == "dark" else None}
+        return palette["colors"]
+
+    monkeypatch.setattr(ms.MusicScenes, "_colors_from_cover", fake_cover)
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "brightness": 200,
+        "light_brightness": {LIGHTS[1]: 50}, "music": {"media_player": PLAYER},
+    }, blocking=True, return_response=True)
+    scene_id = r["scene"]["id"]
+    attrs = lambda light: hass.states.get(light).attributes  # noqa: E731
+
+    player(hass, PLAYER, "playing", album="Red")
+    await activate(hass, scene_id)
+    full = [attrs(light)["brightness"] for light in LIGHTS]
+    assert full[0] == 200 and attrs(LIGHTS[0])["xy_color"] != ms.WHITE
+
+    player(hass, PLAYER, "playing", album="Black")
+    await wait(hass, 6)
+    assert [attrs(light)["brightness"] for light in LIGHTS] == [round(b * ms.DARK_DIM) for b in full]
+    assert all(attrs(light)["xy_color"] == ms.WHITE for light in LIGHTS)
+
+    player(hass, PLAYER, "playing", album="White")
+    await wait(hass, 6)
+    assert [attrs(light)["brightness"] for light in LIGHTS] == full
+    assert all(attrs(light)["xy_color"] == ms.WHITE for light in LIGHTS)
+
+    player(hass, PLAYER, "playing", album="Black")
+    await wait(hass, 6)
+    player(hass, PLAYER, "playing", album="Red")
+    await wait(hass, 6)
+    assert [attrs(light)["brightness"] for light in LIGHTS] == full
+    assert attrs(LIGHTS[0])["xy_color"] != ms.WHITE

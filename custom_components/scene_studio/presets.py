@@ -1,5 +1,6 @@
 # Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets,
-# gradient lamps get the preset colors as gradient (gradient.py).
+# gradient lamps get the preset colors as gradient (gradient.py), main and accent lights of music
+# scenes take their colors from their own part of the preset (roles, pools).
 
 import voluptuous as vol
 import asyncio
@@ -7,12 +8,22 @@ import logging
 from .file_utils import PRESET_DATA, RUNTIME_PRESETS
 from .color_management import *
 from .color_temperature import find_closest_ct_match
-from .util import light_brightness_for
+from .util import light_brightness_for, resolve_entity_ids
 from .const import DOMAIN
 from .gradient import gradient_colors
 from .data import find_data
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _role_for(hass, entity_id, roles):
+    """Role of a light in a music scene (main / accent): its own or the one of a group it is part of."""
+    role = roles.get(entity_id)
+    if role is None:
+        for key, value in roles.items():
+            if key != entity_id and entity_id in resolve_entity_ids(hass, key):
+                return value
+    return role
 
 
 async def apply_preset(
@@ -37,6 +48,9 @@ async def apply_preset(
         raise vol.Invalid(f"Preset '{preset_id}' not found.")
 
     brightness = brightness_override if brightness_override else preset_data.get("bri", 255)
+    # music scenes (3.6): a dark cover without colors gives white light at a part of the brightness;
+    # the next cover is applied without it, so the lights get brighter again
+    dim = preset_data.get("dim")
 
     preset_colors = [(light["x"], light["y"]) for light in preset_data["lights"]]
     # color intensity of the scene (Scene Studio 3.5): applied on top of the preset, also for music colors
@@ -47,6 +61,15 @@ async def apply_preset(
         randomized_colors = get_randomized_colors(preset_colors, len(light_entity_ids))
         random.shuffle(light_entity_ids) # While this _should_ be redundant, the result somehow feels better with it in place
 
+    # Music scenes (3.6): lights with a role use only the main or the accent colors of the cover.
+    # Presets without roles (everything else) are not affected.
+    roles = preset_data.get("roles") or {}
+    pools = {
+        role: adjust_saturation([tuple(c) for c in colors], saturation)
+        for role, colors in (preset_data.get("pools") or {}).items() if role in ("main", "accent") and colors
+    } if roles else {}
+    role_index = {}
+
     tasks = []
 
     for index, entity_id in enumerate(light_entity_ids):
@@ -55,11 +78,24 @@ async def apply_preset(
             "transition": transition,
             "entity_id": entity_id,
         }
+        if dim and light_params["brightness"]:
+            light_params["brightness"] = max(1, round(light_params["brightness"] * dim))
         hass_state = hass.states.get(entity_id)
         if not hass_state:
             continue
 
-        if shuffle:
+        role = _role_for(hass, entity_id, roles) if pools else None
+        pool = pools.get(role)
+        if pool:
+            current_color = hass_state.attributes.get("xy_color", None)
+            if shuffle and smart_shuffle and current_color is not None:
+                next_color = get_next_smart_random_color(current_color, pool)
+            elif shuffle:
+                next_color = get_random_color(pool)
+            else:
+                next_color = get_next_color(role_index.get(role, 0), pool)
+            role_index[role] = role_index.get(role, 0) + 1
+        elif shuffle:
             current_color = hass_state.attributes.get("xy_color", None)
 
             if current_color is not None and smart_shuffle:
@@ -72,7 +108,8 @@ async def apply_preset(
             next_color = get_next_color(index, preset_colors)
 
         supported_color_modes = hass_state.attributes.get("supported_color_modes", "")
-        color_support = any(mode in supported_color_modes for mode in ["xy", "hs", "rgb", "rgbw"])
+        # rgbww (e.g. WiZ): without it such lights only got a white tone instead of the color
+        color_support = any(mode in supported_color_modes for mode in ["xy", "hs", "rgb", "rgbw", "rgbww"])
         temp_support = "color_temp" in supported_color_modes
         brightness_support = "brightness" in supported_color_modes
 

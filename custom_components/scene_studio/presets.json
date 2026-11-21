@@ -226,6 +226,20 @@
       ]
     },
     {
+      "id": "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63",
+      "categoryId": "aa328226-a847-4365-96f4-7d29fe4388bb",
+      "name": "Time of day",
+      "img": "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63.jpeg",
+      "bri": 255,
+      "lights": [
+        {
+          "x": 0.4578,
+          "y": 0.4101
+        }
+      ],
+      "daytime": true
+    },
+    {
       "id": "d648408d-58ab-4768-b192-47ce06dc8e61",
       "categoryId": "2f515d38-0dee-4988-9ea5-4baa560ea08c",
       "name": "Blossom",

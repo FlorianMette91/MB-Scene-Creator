@@ -11,7 +11,8 @@ import {makeTranslate} from "./i18n";
 import {RunningScene, RunningStrip} from "./components/RunningStrip";
 import {ImportBanner, importBrowserSettings} from "./components/ImportBanner";
 import {SceneDraft, SceneEditor, draftFromScene} from "./components/SceneEditor";
-import {DEFAULT_TUNABLES, SavedScene, readLocalStorage, sceneAreaId, sceneToTunables, targetsAreaId} from "./tunables";
+import {DaytimeEditor} from "./components/DaytimeEditor";
+import {DAYTIME_PRESET_ID, DEFAULT_TUNABLES, SavedScene, readLocalStorage, sceneAreaId, sceneToTunables, targetsAreaId} from "./tunables";
 
 declare module "react" {
     namespace JSX {
@@ -209,10 +210,19 @@ export const App : React.FunctionComponent<{
                 }
             </div>
 
+            <DaytimeEditor
+                hass={hass}
+                t={t}
+                draft={draft?.presetId === DAYTIME_PRESET_ID ? draft : null}
+                savedScenes={savedScenes ?? []}
+                onClose={() => setDraft(null)}
+                onSaved={fetchSavedScenes}
+            />
             <SceneEditor
                 hass={hass}
                 t={t}
-                draft={draft}
+                draft={draft?.presetId === DAYTIME_PRESET_ID ? null : draft}
+                onDaytime={(d) => setDraft({...d, presetId: DAYTIME_PRESET_ID})}
                 presets={presets}
                 favoritePresets={draft ? favorites() : []}
                 onClose={() => setDraft(null)}

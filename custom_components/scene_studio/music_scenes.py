@@ -70,6 +70,9 @@ _INTERNAL = contextvars.ContextVar("scene_studio_music_internal", default=False)
 
 # lowest saturation of a cover color on the lights
 VIVID_MIN = 0.8
+# a cover without colors (3.6): white light; for a dark cover dimmed to this part of the scene brightness
+WHITE = (0.3227, 0.329)
+DARK_DIM = 0.4
 
 
 def runtime_preset_id(scene_id: str) -> str:
@@ -80,15 +83,19 @@ def is_music_scene(scene: dict | None) -> bool:
     return bool(scene) and (scene.get(ATTR_SCENE_PRESET_ID) == MUSIC_PRESET_ID or bool(scene.get(ATTR_MUSIC)))
 
 
-def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tuple[float, float]] | None:
-    """Dominant, colorful colors of a cover as xy. None if the cover has no usable color.
+def _cover_hsv(data: bytes, max_colors: int, focus: int) -> tuple[list[tuple[float, float]] | None, dict | None]:
+    """The colors of a cover as (hue, saturation for the light), most important first (None if it has
+    no usable color), and what else is known about it: ``light`` (average brightness), ``white``
+    (part of the picture that is white), ``top`` (part with the first color), ``top_sat``.
 
-    Colorful pixels are put into hue bins weighted by saturation x value, so small but vivid
-    accents count and greys, black and white are ignored. Covers with only one or two colors get
-    close variants, so a dynamic scene still has something to change between.
+    ``focus`` decides what "important" means: 100 = vivid (colorful pixels weighted by saturation x
+    value, so small but vivid accents count and pale colors are ignored), 0 = area (every pixel counts
+    the same, pale areas such as a light sky included). Values in between mix both.
     """
     from PIL import Image  # Pillow ships with Home Assistant
 
+    f = min(100, max(0, focus)) / 100
+    min_sat = 0.06 + 0.19 * f  # 0.25 for vivid: black, white, grey are nothing a lamp can show nicely
     image = Image.open(io.BytesIO(data)).convert("RGB")
     image.thumbnail((96, 96))
     pixels = list(image.getdata())
@@ -97,20 +104,29 @@ def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tupl
     hue_x = [0.0] * bins
     hue_y = [0.0] * bins
     sat_sum = [0.0] * bins
-    colorful = 0
+    count = [0] * bins
+    colorful = white = 0
+    light = 0.0
     for r, g, b in pixels:
         hue, sat, val = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-        if sat < 0.25 or val < 0.25:
-            continue  # black, white, grey: nothing a lamp can show nicely
+        light += val
+        if sat < 0.06 and val > 0.8:
+            white += 1
+        if sat < min_sat or val < 0.25:
+            continue
         colorful += 1
-        w = sat * val
+        count[int(hue * bins) % bins] += 1
+        w = sat * val if f == 1 else (sat * val) ** f
         k = int(hue * bins) % bins
         weight[k] += w
         hue_x[k] += w * math.cos(2 * math.pi * hue)
         hue_y[k] += w * math.sin(2 * math.pi * hue)
         sat_sum[k] += w * sat
-    if not pixels or colorful / len(pixels) < 0.03:
-        return None
+    if not pixels:
+        return None, None
+    stats = {"light": light / len(pixels), "white": white / len(pixels), "top": 0.0, "top_sat": 0.0}
+    if colorful / len(pixels) < 0.03:
+        return None, stats
 
     order = sorted(range(bins), key=lambda k: -weight[k])
     top = weight[order[0]]
@@ -122,25 +138,71 @@ def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tupl
             continue  # too close to a color we already have
         picked.append(k)
 
+    # lamps look washed out with the cover's own saturation (often 40-60 %): keep the hue, but use a
+    # vivid 80-100 % for the light. Towards "area" the main color stays closer to the cover (from
+    # 35 %), so a light blue sky stays light blue; the other colors are accents and stay vivid.
     hsv = []
     for k in picked:
         hue = (math.atan2(hue_y[k], hue_x[k]) / (2 * math.pi)) % 1
-        # lamps look washed out with the cover's own saturation (often 40-60 %): keep the hue,
-        # but always use a vivid 80-100 % for the light
         cover_sat = sat_sum[k] / weight[k]
-        sat = VIVID_MIN + (1.0 - VIVID_MIN) * min(1.0, max(0.0, (cover_sat - 0.25) / 0.6))
+        vivid_min = VIVID_MIN if hsv else 0.35 + (VIVID_MIN - 0.35) * f
+        sat = vivid_min + (1.0 - vivid_min) * min(1.0, max(0.0, (cover_sat - 0.25) / 0.6))
         hsv.append((hue, sat))
-    if len(hsv) < 3:
-        for hue, sat in list(hsv):
-            hsv.append(((hue + 0.035) % 1, sat))
-            hsv.append(((hue - 0.035) % 1, max(VIVID_MIN, sat * 0.9)))
+    stats["top"] = count[picked[0]] / len(pixels)
+    stats["top_sat"] = sat_sum[picked[0]] / weight[picked[0]]
+    return hsv, stats
 
+
+def _xy(hsv: list[tuple[float, float]]) -> list[tuple[float, float]]:
     colors = []
-    for hue, sat in hsv[: max(max_colors, 3)]:
-        r, g, b = colorsys.hsv_to_rgb(hue, sat, 1.0)
+    for hue, sat in hsv:
+        r, g, b = colorsys.hsv_to_rgb(hue % 1, sat, 1.0)
         x, y = color_util.color_RGB_to_xy(round(r * 255), round(g * 255), round(b * 255))
         colors.append((round(x, 4), round(y, 4)))
     return colors
+
+
+def extract_cover_palette(data: bytes, focus: int = 100, max_colors: int = MAX_COLORS) -> dict | None:
+    """Colors of a cover as xy: ``colors`` (all, most important first), ``main`` (the most important
+    color with two close variants, for main lights) and ``accent`` (the other colors, for accent
+    lights). None only for an empty picture.
+
+    Covers with only one or two colors get close variants, so a dynamic scene still has something to
+    change between; a cover with a single color gets accents a bit further away from it.
+
+    A cover without colors gives white, with ``neutral`` = "white" (bright cover) or "dark" (dark
+    cover, the lights are dimmed then). A cover that is mostly white with some color gives white as
+    main color and the colors as accents, the more the focus is on areas (never for vivid).
+    """
+    hsv, stats = _cover_hsv(data, max_colors, focus)
+    if stats is None:
+        return None
+    if not hsv:
+        neutral = "white" if stats["light"] >= 0.5 else "dark"
+        return {"colors": [WHITE], "main": [WHITE], "accent": [WHITE], "neutral": neutral}
+    f = min(100, max(0, focus)) / 100
+    if f < 1 and stats["white"] * (1 - f) > stats["top"]:
+        # white fills more of the cover than its first color: white is the main color
+        sat = VIVID_MIN + (1.0 - VIVID_MIN) * min(1.0, max(0.0, (stats["top_sat"] - 0.25) / 0.6))
+        accent = _xy([(hsv[0][0], sat)] + hsv[1:])
+        return {"colors": [WHITE] + accent, "main": [WHITE], "accent": accent, "neutral": None}
+    floor = 0.35 + (VIVID_MIN - 0.35) * f
+    hue, sat = hsv[0]
+    main = [(hue, sat), (hue + 0.03, sat), (hue - 0.03, max(floor, sat * 0.9))]
+    accent = hsv[1:] or [(hue + 0.09, max(VIVID_MIN, sat)), (hue - 0.09, max(VIVID_MIN, sat))]
+    colors = list(hsv)
+    if len(colors) < 3:
+        for i, (h, s) in enumerate(list(colors)):
+            low = floor if i == 0 else VIVID_MIN
+            colors.append(((h + 0.035) % 1, s))
+            colors.append(((h - 0.035) % 1, max(low, s * 0.9)))
+    return {"colors": _xy(colors[: max(max_colors, 3)]), "main": _xy(main), "accent": _xy(accent), "neutral": None}
+
+
+def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tuple[float, float]] | None:
+    """Dominant, colorful colors of a cover as xy (vivid colors first); white for a cover without colors."""
+    palette = extract_cover_palette(data, 100, max_colors)
+    return palette["colors"] if palette else None
 
 
 @dataclass
@@ -169,6 +231,7 @@ class MusicScenes:
         # scene_id -> (snapshot before the music, unsub light listener, unsub expiry timer)
         self._sleeping: dict[str, tuple[dict, object, object]] = {}
         self._colors: dict[str, tuple[str | None, list]] = {}  # scene_id -> (album, colors)
+        self._pools: dict[str, dict] = {}  # scene_id -> main and accent colors of that cover, focus used
         self._unsub_players = None
         self._unsub_store = store.add_listener(self._on_store_change)
         # The speaker of a room can change when a scene or a speaker is moved to another room
@@ -181,6 +244,8 @@ class MusicScenes:
         )
         self._stopped_at: dict[str, float] = {}  # media player -> when it last stopped playing
         self._dismissed: set[str] = set()  # scenes ended by hand: no auto start until the music paused
+        # time of day scenes that follow the phase end the same way (set by the integration)
+        self.also_release = None
         self._subscribe_players()
 
     # ------------------------------------------------------------------ helpers
@@ -314,12 +379,21 @@ class MusicScenes:
 
     def _set_runtime_preset(self, scene: dict, colors: list, preset_id: str | None = None) -> str:
         preset_id = preset_id or runtime_preset_id(scene["id"])
-        RUNTIME_PRESETS[preset_id] = {
+        preset = {
             "id": preset_id,
             "name": scene.get("name", "Music"),
             "bri": 255,
             "lights": [{"x": x, "y": y} for x, y in colors],
         }
+        # main and accent lights (3.6): they take their colors from their own part of the cover colors
+        roles = (scene.get(ATTR_MUSIC) or {}).get("roles") or {}
+        pools = self._pools.get(scene.get("id"))
+        if roles and pools:
+            preset["roles"] = dict(roles)
+            preset["pools"] = pools
+        if pools and pools.get("dim"):
+            preset["dim"] = pools["dim"]  # dark cover without colors: white, but dimmed
+        RUNTIME_PRESETS[preset_id] = preset
         return preset_id
 
     def session_for_light(self, entity_id: str) -> str | None:
@@ -531,6 +605,9 @@ class MusicScenes:
         state = self.hass.states.get(player) if player else None
         album = self._album_key(state) if self._playing(player) else cached_album
         colors = cached_colors if album == cached_album else None
+        focus = (scene.get(ATTR_MUSIC) or {}).get("focus", 100)
+        if colors is not None and self._pools.get(scene_id, {}).get("focus", 100) != focus:
+            colors = None  # the color choice of the scene was changed: read the cover again
         if colors is None and self._playing(player):
             colors = await self._colors_from_cover(scene_id, state)
         session.album = album
@@ -607,13 +684,20 @@ class MusicScenes:
                         raise ValueError("cover too large")
                     chunks.append(chunk)
                 data = b"".join(chunks)
-            colors = await self.hass.async_add_executor_job(extract_cover_colors, data)
+            scene = self.store.get(scene_id)
+            focus = (scene.get(ATTR_MUSIC) or {}).get("focus", 100) if scene else 100
+            palette = await self.hass.async_add_executor_job(extract_cover_palette, data, focus)
         except Exception as err:  # noqa: BLE001 - no cover colors, the preset stays
             _LOGGER.warning("Cover of %s could not be read: %s", state.entity_id, err)
             return None
-        if colors:
-            self._colors[scene_id] = (album, colors)
-        return colors
+        if not palette:
+            return None
+        self._colors[scene_id] = (album, palette["colors"])
+        self._pools[scene_id] = {
+            "main": palette["main"], "accent": palette["accent"], "focus": focus,
+            "dim": DARK_DIM if palette.get("neutral") == "dark" else None,
+        }
+        return palette["colors"]
 
     def _schedule_cover(self, scene: dict):
         session = self.sessions.get(scene["id"])
@@ -659,7 +743,7 @@ class MusicScenes:
                 return
             if colors:
                 preset_id = self._set_runtime_preset(scene, colors)
-            # colorless cover: keep the colors we have, but still move them on
+            # cover that cannot be read: keep the colors we have, but still move them on
         if not session.applied:
             return
         on = [entity_id for entity_id in session.lights if self._is_on(entity_id)]
@@ -753,7 +837,7 @@ class MusicScenes:
     def _on_service_call(self, event: Event):
         """A scene of Home Assistant was started: music scenes on its lights end (like with a scene of
         Scene Studio). Changing lights directly (dimming, a color, on/off) does not end them."""
-        if self.is_internal() or not (self.sessions or self._sleeping):
+        if self.is_internal() or not (self.sessions or self._sleeping or self.also_release):
             return
         data = event.data.get("service_data") or {}
         if event.data.get("service") == "apply":
@@ -771,6 +855,11 @@ class MusicScenes:
                 lights.extend([members] if isinstance(members, str) else list(members or []))
         if lights:
             self.release_lights(lights)
+            if self.also_release:
+                members = set(lights)
+                for entity_id in lights:
+                    members.update(resolve_entity_ids(self.hass, entity_id))
+                self.also_release(members)
 
     def _stop_loop(self, scene_id: str) -> None:
         """The color loop of an ended music scene must not go on (or come back with the lights)."""
