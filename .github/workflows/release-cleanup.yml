@@ -16,7 +16,7 @@ jobs:
       - name: Keep the 7 newest releases
         env:
           GH_TOKEN: ${{ github.token }}
-          KEEP: "7"
+          KEEP: "10"
         run: |
           gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --exclude-drafts --json tagName,createdAt \
             --jq "sort_by(.createdAt) | reverse | .[${KEEP}:][] | .tagName" |
