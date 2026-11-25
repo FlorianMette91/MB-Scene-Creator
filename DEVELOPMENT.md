@@ -27,7 +27,7 @@ is 2026.7. Testing a current Home Assistant installation remains necessary befor
 
 After merging the pull request, set the desired version in
 `custom_components/mb_scene_creator/manifest.json` and create a GitHub release with
-matching tag `vVERSION`. HACS uses the integration directory in that tag; no separate
+matching tag `vVERSION`. For a public repository, Marketplace uses the integration directory in that tag; no separate
 upload is required. Build the panel before tagging. Do not edit published tags.
 
 ## Initial personal changes

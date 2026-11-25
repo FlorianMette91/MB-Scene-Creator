@@ -117,8 +117,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   features table of the README and on its docs page (Panel, Saved scenes, Room card, Services, …); search
   all pages for renamed terms. A release is made only after the pull request is merged into `main` and
   the version in `manifest.json` matches the tag.
-  After a release, `.github/workflows/release-cleanup.yml` keeps the 7 newest releases (tags stay). `README.md` is also shown
-  in HACS, so it uses absolute URLs for images and links.
+  Releases are retained. `README.md` is also shown in the Marketplace.
+  The Marketplace continues to use `hacs.json` and the HACS validation action.
 - Code changes go through a feature branch and a pull request.
 
 ## Frontend notes
