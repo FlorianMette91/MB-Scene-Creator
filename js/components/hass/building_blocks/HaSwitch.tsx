@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 import React, {Component} from "react";
 
 interface HaSwitchProps {

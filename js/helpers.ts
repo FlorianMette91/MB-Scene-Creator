@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 
 // Loads in ha-config-dashboard which is used to copy styling
 // Also provides ha-settings-row
@@ -51,6 +52,6 @@ export const loadConfigDashboard = async () => {
         await devToolsRouter?.routerOptions?.routes?.service?.load?.(); // Home assistant before 2024.8 => service
         await devToolsRouter?.routerOptions?.routes?.action?.load?.(); // Home assistant after 2024.8 => action
     } else {
-        console.warn("Scene Studio could not load as the devtools could not be found in the routing tree");
+        console.warn("MB Scene Creator could not load as the devtools could not be found in the routing tree");
     }
 };

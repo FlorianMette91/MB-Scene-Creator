@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Download of album covers for music scenes: size limit, internal and external URLs."""
 
 import pytest
@@ -36,7 +37,7 @@ async def test_cover_from_the_internet(hass: HomeAssistant, aioclient_mock, monk
 
 
 async def test_cover_too_large(hass: HomeAssistant, aioclient_mock, monkeypatch, userdata):
-    from custom_components.scene_studio import music_scenes
+    from custom_components.mb_scene_creator import music_scenes
 
     await setup(hass, monkeypatch)
     monkeypatch.setattr(music_scenes, "MAX_COVER_BYTES", 100)

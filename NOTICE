@@ -26,3 +26,12 @@ Changes compared to Scene Presets (2026, Michael Andrejews):
 Files changed or added by this version carry a note at the top. The built-in presets (names and
 IDs), the pictures of the presets in the category Defaults, the color logic and the dynamic scene
 engine are the work of the original author.
+
+MB Scene Creator (2026)
+Maintained by FlorianMette91.
+Based on Scene Studio 3.7.1 by Michael Andrejews:
+https://github.com/andrejem/scene-studio
+Upstream commit: 9b8ded1a71cae18901b9ac0392bb6710aa8604f1
+Additional changes: independent integration domain mb_scene_creator, panel, storage,
+services and room card; per-light color and saturation overrides; own release workflow.
+Original attribution, license and asset credits are retained.

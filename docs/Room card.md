@@ -2,7 +2,7 @@
 
 <img src="../img/room-card.png" width="49%" alt="Room card, dark theme"> <img src="../img/room-card-light.png" width="49%" alt="Room card, light theme">
 
-`custom:scene-studio-room-card` shows one room (Home Assistant area) on a dashboard:
+`custom:mb-scene-creator-room-card` shows one room (Home Assistant area) on a dashboard:
 
 - **Room slider** – tap to switch all lights of the room on/off, drag for brightness, hold for details.
 - **Scene tiles** – every `scene.*` entity assigned to the area, with the preset image for saved
@@ -25,7 +25,7 @@ Assistant runs in German.
 ## Configuration
 
 ```yaml
-type: custom:scene-studio-room-card
+type: custom:mb-scene-creator-room-card
 area: arbeitszimmer
 ```
 

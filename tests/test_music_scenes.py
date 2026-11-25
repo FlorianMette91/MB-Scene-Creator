@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Music scenes: colors from the album cover, auto start and return to the state before."""
 
 import io
@@ -36,7 +37,7 @@ def _image(colors):
 
 
 def test_extract_cover_colors():
-    from custom_components.scene_studio.music_scenes import extract_cover_colors
+    from custom_components.mb_scene_creator.music_scenes import extract_cover_colors
 
     colors = extract_cover_colors(_image([(220, 20, 30), (20, 40, 200)]))
     assert colors is not None and len(colors) >= 3  # two colors plus close variants
@@ -50,7 +51,7 @@ def test_pale_cover_gives_vivid_colors():
 
     from homeassistant.util import color as color_util
 
-    from custom_components.scene_studio.music_scenes import extract_cover_colors
+    from custom_components.mb_scene_creator.music_scenes import extract_cover_colors
 
     colors = extract_cover_colors(_image([(150, 100, 200), (110, 140, 190)]))  # about 35-50 % saturation
     assert colors
@@ -92,7 +93,7 @@ def player(hass, entity_id, state, album="Album 1"):
 
 
 async def music_setup(hass, monkeypatch):
-    import custom_components.scene_studio.music_scenes as ms
+    import custom_components.mb_scene_creator.music_scenes as ms
 
     fetched = []
 
@@ -110,7 +111,7 @@ async def music_setup(hass, monkeypatch):
 
 
 async def save(hass, name, lights, media_player, **music):
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": name, "preset_id": MUSIC, "targets": {"entity_id": lights},
         "music": {"media_player": media_player, **music},
     }, blocking=True, return_response=True)
@@ -138,7 +139,7 @@ async def wait(hass, seconds):
 async def test_select_without_music_waits_for_a_cover(hass: HomeAssistant, monkeypatch, userdata):
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     assert not any(on(hass, l) for l in LIGHTS)  # no cover yet: nothing happens
     assert scene_id in music(hass).sessions
@@ -153,7 +154,7 @@ async def test_selected_without_music_is_not_restored(hass: HomeAssistant, monke
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     await hass.services.async_call("light", "turn_on", {"entity_id": "light.a"}, blocking=True)
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     player(hass, PLAYER, "paused")
     await wait(hass, 31)
     assert on(hass, "light.a")
@@ -171,11 +172,11 @@ async def test_music_preset_applied_directly(hass: HomeAssistant, monkeypatch, u
     registry.async_update_entity(light.entity_id, area_id=area.id)
     await music_setup(hass, monkeypatch)
 
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": MUSIC, "targets": {"entity_id": ["light.a"]}}, blocking=True)
     assert not on(hass, "light.a")  # no music: nothing happens
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": MUSIC, "targets": {"entity_id": ["light.a"]}}, blocking=True)
     assert music(hass).player_in_area(area.id) == PLAYER
     assert on(hass, "light.a")
@@ -185,10 +186,10 @@ async def test_music_end_restores_state_before(hass: HomeAssistant, monkeypatch,
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     assert fetched == [key("Album 1")]
-    from custom_components.scene_studio.file_utils import RUNTIME_PRESETS
+    from custom_components.mb_scene_creator.file_utils import RUNTIME_PRESETS
     assert RUNTIME_PRESETS[f"music_{scene_id}"]["lights"] == [{"x": x, "y": y} for x, y in COVER]
 
     # A short pause (next track) does nothing
@@ -240,7 +241,7 @@ async def test_follow_needs_active_music_scene(hass: HomeAssistant, monkeypatch,
     player(hass, PLAYER_2, "paused")
 
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": living}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": living}, blocking=True)
     await hass.async_block_till_done()
     # The music moves to the bedroom (Follow Me Music): bedroom starts, living room returns to off
     player(hass, PLAYER_2, "playing")
@@ -255,8 +256,8 @@ async def test_other_scene_takes_over_without_restore(hass: HomeAssistant, monke
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": PRESET, "targets": {"entity_id": LIGHTS}}, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
@@ -269,7 +270,7 @@ async def test_lights_off_ends_music_scene(hass: HomeAssistant, monkeypatch, use
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
@@ -279,7 +280,7 @@ async def test_new_cover_changes_colors_quickly(hass: HomeAssistant, monkeypatch
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     # Skipping through tracks: only the cover that stays is read
     player(hass, PLAYER, "playing", album="Album 2")
@@ -294,10 +295,10 @@ async def test_new_track_same_cover_moves_colors(hass: HomeAssistant, monkeypatc
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     calls = []
-    import custom_components.scene_studio.music_scenes as ms
+    import custom_components.mb_scene_creator.music_scenes as ms
     original = ms.apply_preset
 
     async def spy(*args, **kwargs):
@@ -317,7 +318,7 @@ async def test_any_speaker_follows_the_music(hass: HomeAssistant, monkeypatch, u
     scene_id = await save(hass, "Office music", LIGHTS, "any")
     player(hass, PLAYER_2, "playing", album="Kitchen")
     await hass.async_block_till_done()
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     assert music(hass).sessions[scene_id].media_player == PLAYER_2
     assert fetched == [key("Kitchen", PLAYER_2)] and all(on(hass, l) for l in LIGHTS)
@@ -342,7 +343,7 @@ async def test_saturation_of_a_scene(hass: HomeAssistant, monkeypatch, userdata)
 
     from homeassistant.util import color as color_util
 
-    from custom_components.scene_studio.color_management import adjust_saturation
+    from custom_components.mb_scene_creator.color_management import adjust_saturation
 
     def sat(xy):
         r, g, b = color_util.color_xy_to_RGB(*xy)
@@ -360,11 +361,11 @@ async def test_saturation_of_a_scene(hass: HomeAssistant, monkeypatch, userdata)
     # a saved scene passes it on to the lights
     fake_lights(hass, ["light.x"])
     await setup(hass, monkeypatch)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Vivid", "preset_id": PRESET, "targets": {"entity_id": ["light.x"]}, "saturation": 100,
     }, blocking=True, return_response=True)
     assert r["scene"]["saturation"] == 100
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
     await hass.async_block_till_done()
     assert sat(hass.states.get("light.x").attributes["xy_color"])[1] > 0.9
 
@@ -375,7 +376,7 @@ async def test_lights_back_on_continue_with_the_current_cover(hass: HomeAssistan
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER, resume=True)
     player(hass, PLAYER, "playing", album="Album 1")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     assert all(on(hass, l) for l in LIGHTS)
 
@@ -395,19 +396,19 @@ async def test_lights_back_on_without_music_or_other_scene(hass: HomeAssistant, 
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER, resume=True)
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
     await hass.async_block_till_done()
 
     # another scene on these lights: the music scene does not come back
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": PRESET, "targets": {"entity_id": LIGHTS}}, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions and not music(hass)._sleeping
 
     # music stopped: lights turned on stay as they are
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
     player(hass, PLAYER, "paused")
@@ -425,14 +426,14 @@ async def test_any_speaker_ignores_tv_sound(hass: HomeAssistant, monkeypatch, us
     await hass.async_block_till_done()
     hass.states.async_set(PLAYER_2, "playing", {"source": "TV", "media_title": "TV"})  # started later
     await hass.async_block_till_done()
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
     assert music(hass).sessions[scene_id].media_player == PLAYER
     assert fetched == [key("Kitchen")]
 
 
 async def activate(hass, scene_id):
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
 
 
@@ -466,7 +467,7 @@ async def test_stop_services_end_the_music_scene(hass: HomeAssistant, monkeypatc
     await activate(hass, scene_id)
     assert scene_id in music(hass).sessions
 
-    await hass.services.async_call("scene_studio", service, data, blocking=True)
+    await hass.services.async_call("mb_scene_creator", service, data, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
     assert all(on(hass, light) for light in LIGHTS)  # the lights stay as they are
@@ -480,18 +481,18 @@ async def test_stop_services_end_the_music_scene(hass: HomeAssistant, monkeypatc
 async def test_stopping_the_color_loop_ends_the_music_scene(hass: HomeAssistant, monkeypatch, userdata):
     """The stop button of the panel stops the running dynamic scene by its id."""
     fetched = await music_setup(hass, monkeypatch)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "dynamic": True,
         "interval": 60, "music": {"media_player": PLAYER},
     }, blocking=True, return_response=True)
     scene_id = r["scene"]["id"]
     player(hass, PLAYER, "playing")
     # no async_block_till_done while the color loop runs: it would wait for the loop to end
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     running = runtime(hass).dynamic_scenes.get_all()
     assert len(running) == 1 and scene_id in music(hass).sessions
 
-    await hass.services.async_call("scene_studio", "stop_dynamic_scene", {"id": running[0].id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "stop_dynamic_scene", {"id": running[0].id}, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
 
@@ -544,7 +545,7 @@ async def test_selecting_a_music_scene_entity_does_not_end_it(hass: HomeAssistan
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     await hass.async_block_till_done()
-    entity_id = er.async_get(hass).async_get_entity_id("scene", "scene_studio", f"saved_scene_{scene_id}")
+    entity_id = er.async_get(hass).async_get_entity_id("scene", "mb_scene_creator", f"saved_scene_{scene_id}")
     assert entity_id
     player(hass, PLAYER, "playing")
     await activate(hass, scene_id)
@@ -562,7 +563,7 @@ async def test_gap_between_tracks_is_not_a_music_start(hass: HomeAssistant, monk
     await hass.async_block_till_done()
     assert scene_id in music(hass).sessions
 
-    await hass.services.async_call("scene_studio", "stop_all_dynamic_scenes", {}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "stop_all_dynamic_scenes", {}, blocking=True)
     assert scene_id not in music(hass).sessions
 
     player(hass, PLAYER, "idle", album="Album 2")
@@ -585,13 +586,13 @@ async def test_ended_music_scene_stops_its_color_loop(hass: HomeAssistant, monke
     import asyncio
 
     await music_setup(hass, monkeypatch)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "dynamic": True,
         "interval": 60, "music": {"media_player": PLAYER},
     }, blocking=True, return_response=True)
     scene_id = r["scene"]["id"]
     player(hass, PLAYER, "playing")
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id}, blocking=True)
     assert len(runtime(hass).dynamic_scenes.get_all()) == 1
     for _ in range(20):  # let the color loop turn the lights on
         await asyncio.sleep(0)
@@ -634,7 +635,7 @@ def _hue_sat(xy):
 
 
 def test_color_choice_from_vivid_to_area():
-    from custom_components.scene_studio.music_scenes import extract_cover_colors, extract_cover_palette
+    from custom_components.mb_scene_creator.music_scenes import extract_cover_colors, extract_cover_palette
 
     cover = _sky_cover()
     # vivid (default, as before 3.6): the small red part wins, the pale sky is ignored
@@ -662,7 +663,7 @@ async def test_main_and_accent_lights(hass: HomeAssistant, monkeypatch, userdata
     """Lights with a role take only the main or only the accent colors, the others all colors."""
     import asyncio
 
-    import custom_components.scene_studio.music_scenes as ms
+    import custom_components.mb_scene_creator.music_scenes as ms
 
     main, accent = [(0.15, 0.06), (0.16, 0.08)], [(0.64, 0.33), (0.3, 0.6)]
     await music_setup(hass, monkeypatch)
@@ -674,7 +675,7 @@ async def test_main_and_accent_lights(hass: HomeAssistant, monkeypatch, userdata
 
     monkeypatch.setattr(ms.MusicScenes, "_colors_from_cover", fake_cover)
     lights = LIGHTS + LIGHTS_2
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": lights}, "dynamic": dynamic,
         "interval": 60,
         "music": {"media_player": PLAYER, "focus": 0, "roles": {lights[0]: "main", lights[1]: "accent"}},
@@ -684,19 +685,19 @@ async def test_main_and_accent_lights(hass: HomeAssistant, monkeypatch, userdata
     player(hass, PLAYER, "playing")
     for _ in range(8):  # shuffled: the roles must hold every time
         await hass.services.async_call(
-            "scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
+            "mb_scene_creator", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
         for _ in range(20):
             await asyncio.sleep(0)
         assert hass.states.get(lights[0]).attributes["xy_color"] in main
         assert hass.states.get(lights[1]).attributes["xy_color"] in accent
         assert hass.states.get(lights[2]).attributes["xy_color"] in main[:1] + accent
-    await hass.services.async_call("scene_studio", "stop_all_dynamic_scenes", {}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "stop_all_dynamic_scenes", {}, blocking=True)
     await hass.async_block_till_done()
 
 
 async def test_scenes_without_roles_are_saved_with_the_defaults(hass: HomeAssistant, monkeypatch, userdata):
     await music_setup(hass, monkeypatch)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "music": {"media_player": PLAYER},
     }, blocking=True, return_response=True)
     assert r["scene"]["music"]["focus"] == 100 and r["scene"]["music"]["roles"] == {}
@@ -714,7 +715,7 @@ def _plain(base, part=None, share=0.0):
 
 
 def test_covers_without_colors_give_white():
-    from custom_components.scene_studio.music_scenes import WHITE, extract_cover_palette
+    from custom_components.mb_scene_creator.music_scenes import WHITE, extract_cover_palette
 
     for focus in (100, 50, 0):
         white = extract_cover_palette(_plain((255, 255, 255)), focus)
@@ -739,7 +740,7 @@ def test_covers_without_colors_give_white():
 
 
 async def test_dark_cover_dims_and_the_next_cover_is_bright_again(hass: HomeAssistant, monkeypatch, userdata):
-    import custom_components.scene_studio.music_scenes as ms
+    import custom_components.mb_scene_creator.music_scenes as ms
 
     await music_setup(hass, monkeypatch)
     covers = {"Black": _plain((10, 10, 10)), "White": _plain((255, 255, 255)), "Red": _plain((215, 40, 50))}
@@ -752,7 +753,7 @@ async def test_dark_cover_dims_and_the_next_cover_is_bright_again(hass: HomeAssi
         return palette["colors"]
 
     monkeypatch.setattr(ms.MusicScenes, "_colors_from_cover", fake_cover)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Living music", "preset_id": MUSIC, "targets": {"entity_id": LIGHTS}, "brightness": 200,
         "light_brightness": {LIGHTS[1]: 50}, "music": {"media_player": PLAYER},
     }, blocking=True, return_response=True)

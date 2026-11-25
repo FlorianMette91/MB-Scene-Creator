@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): saved scenes grouped by room (area of the scene entity), tap to activate,
 // pencil to edit, "new scene" per room; tiles have the same size as on the presets tab.
 // Arrange (admins): drag scenes into place (mouse or finger), optionally the same order for all rooms
@@ -27,7 +28,7 @@ export const ScenesPage: React.FunctionComponent<{
     onShowPresets: () => void,
     onReordered?: () => void
 }> = ({hass, t, savedScenes, presetMap, running, onActivate, onEdit, onNew, onShowPresets, onReordered}) => {
-    const [storedRoom, setRoom] = useLocalStorage<string>("scene_studio_room", "all");
+    const [storedRoom, setRoom] = useLocalStorage<string>("mb_scene_creator_room", "all");
     const isAdmin = !!hass?.user?.is_admin;
     // Arrange mode: the room being arranged and its scene ids in the new order
     const [arranging, setArranging] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export const ScenesPage: React.FunctionComponent<{
         setSaving(true);
         try {
             const ids = groups.flatMap(g => orders[g.key] ?? g.scenes.map(({scene}) => scene.id));
-            await hass.callWS({type: "scene_studio/set_scene_order", scene_ids: ids});
+            await hass.callWS({type: "mb_scene_creator/set_scene_order", scene_ids: ids});
             onReordered?.();
         } finally {
             setSaving(false);

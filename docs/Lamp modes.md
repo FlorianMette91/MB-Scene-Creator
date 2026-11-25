@@ -8,7 +8,7 @@ keeps its scene. Example: the living room runs *Northern lights*, the reading la
 lights instead of the scene's own lights:
 
 ```yaml
-action: scene_studio.activate_saved_scene
+action: mb_scene_creator.activate_saved_scene
 data:
   id: 7f3c...            # the "Living room bright" scene
   targets:

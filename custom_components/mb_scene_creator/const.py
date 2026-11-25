@@ -1,0 +1,67 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
+# Modified by Codex (2026): optional persistent per-light colors.
+# Modified by andrejem (2026): constants for per-light timing, saved scenes, room card, exclude
+# the music preset and gradient lamps.
+
+DOMAIN = "mb_scene_creator"
+NAME = "MB Scene Creator"
+
+PANEL_URL = "/mb_scene_creator_panel.js"
+ROOM_CARD_URL = "/mb_scene_creator_room_card.js"  # added by andrejem (2026)
+
+SERVICE_APPLY_PRESET = "apply_preset"
+SERVICE_START_DYNAMIC_SCENE = "start_dynamic_scene"
+SERVICE_STOP_DYNAMIC_SCENE = "stop_dynamic_scene"
+SERVICE_STOP_ALL_DYNAMIC_SCENES = "stop_all_dynamic_scenes"
+SERVICE_STOP_DYNAMIC_SCENES_FOR_TARGETS = "stop_dynamic_scenes_for_targets"
+SERVICE_GET_DYNAMIC_SCENES = "get_dynamic_scenes"
+
+ATTR_SCENE_PRESET_ID = "preset_id"
+ATTR_TARGETS = "targets"
+ATTR_BRIGHTNESS = "brightness"
+ATTR_TRANSITION = "transition"
+ATTR_SHUFFLE = "shuffle"
+ATTR_SMART_SHUFFLE = "smart_shuffle"
+ATTR_INTERVAL = "interval"
+
+ATTR_DYNAMIC_SCENE_ID = "id"
+
+# Added by andrejem (2026): per-light random timing
+ATTR_INTERVAL_MIN = "interval_min"
+ATTR_INTERVAL_MAX = "interval_max"
+ATTR_TRANSITION_MIN = "transition_min"
+ATTR_TRANSITION_MAX = "transition_max"
+ATTR_PER_LIGHT = "per_light"
+ATTR_INTERVAL_RANGE = "interval_range"
+ATTR_TRANSITION_RANGE = "transition_range"
+
+# Added by andrejem (2026): saved scenes
+SERVICE_SAVE_SCENE = "save_scene"
+SERVICE_DELETE_SAVED_SCENE = "delete_saved_scene"
+SERVICE_ACTIVATE_SAVED_SCENE = "activate_saved_scene"
+ATTR_NAME = "name"
+ATTR_DYNAMIC = "dynamic"
+ATTR_EXCLUDE = "exclude"
+ATTR_KEEP_GROUPS = "keep_groups"
+ATTR_OPTIONAL = "optional"
+# Brightness per light in a scene: {entity_id: percent 1-100}, overrides the scene brightness
+ATTR_LIGHT_BRIGHTNESS = "light_brightness"
+
+# Added by andrejem (2026): import from Scene Presets
+SERVICE_IMPORT_SCENE_PRESETS = "import_scene_presets"
+
+# Added by andrejem (2026): built-in preset "Music" - colors from the album cover of a speaker
+MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"
+# music scene speaker: whichever speaker is playing (instead of one entity id)
+MEDIA_PLAYER_ANY = "any"
+
+# Added by andrejem (2026): built-in preset "Time of day" - a scene that stands for another saved scene
+# per phase (day, dusk, night), see daytime.py
+DAYTIME_PRESET_ID = "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63"
+
+# Added by andrejem (2026): gradient lamps show all preset colors (false = one color like any lamp)
+ATTR_GRADIENT = "gradient"
+# color intensity of a scene: -100 (pale, towards white) .. 0 (as the preset) .. 100 (vivid)
+ATTR_SATURATION = "saturation"
+
+ATTR_LIGHT_COLORS = "light_colors"

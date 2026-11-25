@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Which lights get the color of a preset and which only a white tone."""
 
 import pytest
@@ -30,7 +31,7 @@ async def test_every_color_mode_gets_the_color(hass: HomeAssistant, monkeypatch,
 
     entities = [f"light.{mode}" for mode in modes] + ["light.white", "light.dimmer"]
     await hass.services.async_call(
-        "scene_studio", "apply_preset", {"preset_id": PRESET, "targets": {"entity_id": entities}}, blocking=True)
+        "mb_scene_creator", "apply_preset", {"preset_id": PRESET, "targets": {"entity_id": entities}}, blocking=True)
     await hass.async_block_till_done()
 
     got = {c["entity_id"]: c for c in calls}

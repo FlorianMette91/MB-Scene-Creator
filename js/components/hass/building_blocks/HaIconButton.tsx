@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Modified by andrejem (2026): icon and size follow the props
 import React, {Component} from "react";
 import HaIcon from "./HaIcon";

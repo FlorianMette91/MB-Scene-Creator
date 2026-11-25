@@ -1,8 +1,9 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Built-in presets: pictures exist and are credited, hidden presets keep a valid reference."""
 import json
 from pathlib import Path
 
-BASE = Path(__file__).parent.parent / "custom_components" / "scene_studio"
+BASE = Path(__file__).parent.parent / "custom_components" / "mb_scene_creator"
 DATA = json.loads((BASE / "presets.json").read_text(encoding="utf-8"))
 CREDITS = (BASE / "assets" / "CREDITS.md").read_text(encoding="utf-8")
 DEFAULTS = "aa328226-a847-4365-96f4-7d29fe4388bb"  # category "Basics" (drawn pictures)

@@ -1,5 +1,5 @@
 {
-  "name": "scene_studio",
+  "name": "mb_scene_creator",
   "homepage": ".",
   "scripts": {
     "build": "webpack",

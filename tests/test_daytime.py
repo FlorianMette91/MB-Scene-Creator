@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Time of day (3.7): the phases day, dusk and night, and scenes that stand for another scene per phase."""
 
 import datetime as dt
@@ -8,8 +9,8 @@ from astral import Observer
 
 from homeassistant.core import HomeAssistant
 
-from custom_components.scene_studio import daytime as dm
-from custom_components.scene_studio.daytime import limits_of, next_changes, normalize, phase_at
+from custom_components.mb_scene_creator import daytime as dm
+from custom_components.mb_scene_creator.daytime import limits_of, next_changes, normalize, phase_at
 
 from .test_custom_presets import setup, userdata, runtime  # noqa: F401  (fixture and helpers)
 from .test_music_scenes import fake_lights, on
@@ -102,17 +103,17 @@ async def scenes(hass, monkeypatch, follow=False, **phases):
     await setup(hass, monkeypatch)
     fake_lights(hass, LIGHTS + OTHER)
     ids = {}
-    import custom_components.scene_studio.file_utils as fu
+    import custom_components.mb_scene_creator.file_utils as fu
 
     presets = [p["id"] for p in fu.PRESET_DATA["presets"] if not p.get("music") and not p.get("daytime")]
     for index, name in enumerate(("day", "dusk", "night")):
         preset_id = presets[index]
-        r = await hass.services.async_call("scene_studio", "save_scene", {
+        r = await hass.services.async_call("mb_scene_creator", "save_scene", {
             "name": name, "preset_id": preset_id, "targets": {"entity_id": LIGHTS}, "brightness": {"day": 250, "dusk": 150, "night": 20}[name],
         }, blocking=True, return_response=True)
         ids[name] = r["scene"]["id"]
     settings = {phase: ids[phase] for phase in (phases or {"day": 1, "dusk": 1, "night": 1})}
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Auto", "preset_id": DAYTIME, "targets": {"entity_id": LIGHTS},
         "daytime": {**settings, "follow": follow},
     }, blocking=True, return_response=True)
@@ -129,7 +130,7 @@ def brightness(hass, light="light.a"):
 
 
 async def activate(hass, scene_id, **extra):
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id, **extra}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": scene_id, **extra}, blocking=True)
     await hass.async_block_till_done()
 
 
@@ -139,7 +140,7 @@ async def test_scene_of_the_current_phase(hass: HomeAssistant, monkeypatch, user
         set_phase(hass, monkeypatch, phase)
         await activate(hass, auto)
         assert brightness(hass) == expected and brightness(hass, "light.b") == expected
-    assert hass.states.get("sensor.scene_studio_time_of_day").state == "night"
+    assert hass.states.get("sensor.mb_scene_creator_time_of_day").state == "night"
     assert runtime(hass).daytime.following() == []  # without "follow" nothing stays active
 
 
@@ -151,7 +152,7 @@ async def test_missing_phase_uses_the_phase_before(hass: HomeAssistant, monkeypa
     await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
 
     auto2, _ = None, None
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Empty", "preset_id": DAYTIME, "targets": {"entity_id": LIGHTS}, "daytime": {},
     }, blocking=True, return_response=True)
     await activate(hass, r["scene"]["id"])  # nothing set: nothing happens, no error
@@ -197,7 +198,7 @@ async def test_follow_changes_with_the_phase_until_another_scene_or_lights_off(
 
     # the stop services and a scene of Home Assistant end it too
     await activate(hass, auto)
-    await hass.services.async_call("scene_studio", "stop_all_dynamic_scenes", {}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "stop_all_dynamic_scenes", {}, blocking=True)
     assert daytime.following() == []
     await activate(hass, auto)
     hass.bus.async_fire("call_service", {
@@ -209,11 +210,11 @@ async def test_follow_changes_with_the_phase_until_another_scene_or_lights_off(
 async def test_settings_over_websocket(hass: HomeAssistant, monkeypatch, userdata, hass_ws_client):
     await setup(hass, monkeypatch)
     client = await hass_ws_client(hass)
-    await client.send_json({"id": 1, "type": "scene_studio/get_daytime"})
+    await client.send_json({"id": 1, "type": "mb_scene_creator/get_daytime"})
     result = (await client.receive_json())["result"]
     assert result["phase"] in ("day", "dusk", "night") and result["config"] == dm.DEFAULT_CONFIG and result["next"]
 
-    await client.send_json({"id": 2, "type": "scene_studio/set_daytime", "config": {
+    await client.send_json({"id": 2, "type": "mb_scene_creator/set_daytime", "config": {
         "night": {"elevation": -25, "earliest": "22:00", "latest": "23:30"}}})
     result = (await client.receive_json())["result"]
     assert result["config"]["night"] == {"elevation": -25.0, "earliest": "22:00", "latest": "23:30"}

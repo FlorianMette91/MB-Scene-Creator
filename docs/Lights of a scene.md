@@ -31,7 +31,7 @@ A scene can target a whole area (or device, floor, label) and leave single light
 the scene automatically.
 
 Since Home Assistant 2026.11 the target picker can exclude targets itself (**Exclude target**, or
-the details of an area). Scene Studio follows these exclusions too – for lights, devices, areas,
+the details of an area). MB Scene Creator follows these exclusions too – for lights, devices, areas,
 floors and labels – in the services, in saved scenes and in the list of lights. They are stored in
 the target as an `exclude` block:
 
@@ -64,7 +64,7 @@ as a gradient** instead of one color. The gradient starts with the color the lam
 smoothly through the others (up to 5). In a dynamic scene the gradient changes with every step, in a
 [music scene](Music%20scenes.md) the lamp shows the colors of the cover.
 
-Scene Studio finds these lamps by itself in the device list of Zigbee2MQTT; there is nothing to set
+MB Scene Creator finds these lamps by itself in the device list of Zigbee2MQTT; there is nothing to set
 up. Home Assistant's light entity knows only one color, so the gradient is sent to Zigbee2MQTT over
 MQTT. In the scene editor, gradient lamps are marked *gradient* under **Lights of this scene**, and
 **All colors on gradient lamps** switches it off for the scene (`gradient: false`): the lamps then get
@@ -92,7 +92,7 @@ Typical use: a decorative panel that is usually off, but should match the room w
 ## Example
 
 ```yaml
-action: scene_studio.save_scene
+action: mb_scene_creator.save_scene
 data:
   name: Living room everyday
   preset_id: e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8
@@ -111,3 +111,18 @@ data:
 
 `exclude`, `keep_groups`, `optional` and `light_brightness` also work for `apply_preset` and
 `start_dynamic_scene`.
+
+## Individual colors (personal edition)
+
+In the scene editor, choose **Choose lamp color** under a lamp. The existing color editor
+lets you select hue and saturation, or a white tone. Brightness remains independently
+adjustable using the percentage field. **Use preset color** removes the override.
+Color controls are shown only for color or color-temperature capable lamps.
+White-only lamps use the nearest white tone, as with preset colors.
+
+The chosen color is saved with the scene and used for preview, activation, dynamic steps,
+optional lamps joining later, and music changes. It takes precedence over scene saturation,
+random color selection, and the multicolor gradient. Other lamps retain the preset behavior.
+A fixed color in a dynamic or music scene stays fixed until its override is removed.
+Group overrides apply to resolved members; an explicit member override takes priority.
+The same percentage rules remain: blank inherits scene brightness, zero switches off at start.

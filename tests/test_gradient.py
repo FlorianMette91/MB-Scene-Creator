@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Gradient lamps get all colors of the preset over MQTT (Zigbee2MQTT), other lamps one color."""
 
 import json
@@ -17,7 +18,7 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 
 def test_gradient_colors_start_with_the_lamps_color():
-    from custom_components.scene_studio.gradient import gradient_colors
+    from custom_components.mb_scene_creator.gradient import gradient_colors
 
     colors = [(0.1, 0.1), (0.2, 0.2), (0.3, 0.3), (0.4, 0.4), (0.5, 0.4), (0.6, 0.3)]
     assert gradient_colors(colors, (0.3, 0.3)) == [(0.3, 0.3), (0.4, 0.4), (0.5, 0.4), (0.6, 0.3), (0.1, 0.1)]
@@ -49,7 +50,7 @@ async def _setup(hass, monkeypatch):
 
 async def test_gradient_lamp_gets_all_colors(hass: HomeAssistant, monkeypatch, userdata):
     published, turned_on = await _setup(hass, monkeypatch)
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": PRESET, "targets": {"entity_id": ["light.signe", "light.bulb"]}}, blocking=True)
     await hass.async_block_till_done()
     assert [t for t, _ in published] == ["zigbee2mqtt/Signe/set"]
@@ -60,7 +61,7 @@ async def test_gradient_lamp_gets_all_colors(hass: HomeAssistant, monkeypatch, u
 
 async def test_gradient_can_be_switched_off(hass: HomeAssistant, monkeypatch, userdata):
     published, turned_on = await _setup(hass, monkeypatch)
-    await hass.services.async_call("scene_studio", "apply_preset", {
+    await hass.services.async_call("mb_scene_creator", "apply_preset", {
         "preset_id": PRESET, "targets": {"entity_id": ["light.signe"]}, "gradient": False}, blocking=True)
     await hass.async_block_till_done()
     assert published == [] and turned_on == ["light.signe"]
@@ -68,10 +69,10 @@ async def test_gradient_can_be_switched_off(hass: HomeAssistant, monkeypatch, us
 
 async def test_saved_scene_keeps_gradient_setting(hass: HomeAssistant, monkeypatch, userdata):
     published, turned_on = await _setup(hass, monkeypatch)
-    r = await hass.services.async_call("scene_studio", "save_scene", {
+    r = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Signe one color", "preset_id": PRESET, "targets": {"entity_id": ["light.signe"]},
         "gradient": False}, blocking=True, return_response=True)
-    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
+    await hass.services.async_call("mb_scene_creator", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
     await hass.async_block_till_done()
     assert published == [] and turned_on == ["light.signe"]
 
@@ -89,7 +90,7 @@ def _z2m_xy(hex_color):
 @pytest.mark.parametrize("xy", [(0.17, 0.7), (0.15, 0.06), (0.64, 0.33), (0.3, 0.32), (0.2, 0.45), (0.45, 0.41)])
 def test_hex_round_trip(xy):
     """The lamp gets the xy of the preset back, so gradients are as saturated as single colors."""
-    from custom_components.scene_studio.gradient import _hex
+    from custom_components.mb_scene_creator.gradient import _hex
 
     x, y = _z2m_xy(_hex(xy))
     assert abs(x - xy[0]) < 0.01 and abs(y - xy[1]) < 0.01

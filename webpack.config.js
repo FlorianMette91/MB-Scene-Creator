@@ -1,11 +1,12 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 const path = require('path');
 const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
     entry: "./js/index.ts",
     output: {
-        filename: "scene_studio_panel.js",
-        path: path.resolve(__dirname, "custom_components/scene_studio/frontend")
+        filename: "mb_scene_creator_panel.js",
+        path: path.resolve(__dirname, "custom_components/mb_scene_creator/frontend")
     },
     resolve: {
         modules: [path.join(__dirname), 'node_modules'],

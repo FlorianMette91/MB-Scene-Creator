@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 import {useState} from "react";
 
 export const useSessionStorage = <T>(key: string, initialValue: T): [T, (s: T) => void] => {

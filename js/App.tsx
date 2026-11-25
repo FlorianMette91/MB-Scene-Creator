@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Modified by andrejem (2026): presets can be reloaded after creating or changing one in the panel;
 // tabs "Scenes" / "Presets", running dynamic scenes on top, the scene editor and the import from Scene Presets;
 // preset data is loaded with the login of the user
@@ -48,9 +49,9 @@ export const App : React.FunctionComponent<{
     narrow,
 }): React.JSX.Element => {
     const t = useMemo(() => makeTranslate(hass), [hass?.locale?.language, hass?.language]); // eslint-disable-line react-hooks/exhaustive-deps
-    const [categories, setCategories] = useSessionStorage<Array<Category>>("scene_studio_categories",[]);
-    const [presets, setPresets] = useSessionStorage<Array<Preset>>("scene_studio_presets",[]);
-    const [tab, setTab] = useLocalStorage<string>("scene_studio_tab", "scenes");
+    const [categories, setCategories] = useSessionStorage<Array<Category>>("mb_scene_creator_categories",[]);
+    const [presets, setPresets] = useSessionStorage<Array<Preset>>("mb_scene_creator_presets",[]);
+    const [tab, setTab] = useLocalStorage<string>("mb_scene_creator_tab", "scenes");
     const [savedScenes, setSavedScenes] = useState<Array<SavedScene> | null>(null);
     const [running, setRunning] = useState<Array<RunningScene>>([]);
     const [draft, setDraft] = useState<SceneDraft | null>(null);
@@ -58,7 +59,7 @@ export const App : React.FunctionComponent<{
 
     const fetchData = React.useCallback(async () => {
         try {
-            const response = await hass.fetchWithAuth("/assets/scene_studio/scene_studio.json?t=" + Date.now());
+            const response = await hass.fetchWithAuth("/assets/mb_scene_creator/mb_scene_creator.json?t=" + Date.now());
             const data = await response.json();
 
             setCategories(data.categories);
@@ -69,7 +70,7 @@ export const App : React.FunctionComponent<{
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchSavedScenes = React.useCallback(() => {
-        hass.callWS({type: "scene_studio/get_saved_scenes"}).then(result => {
+        hass.callWS({type: "mb_scene_creator/get_saved_scenes"}).then(result => {
             setSavedScenes(result?.saved_scenes ?? []);
         }).catch(() => {
             setSavedScenes(prev => prev ?? []);
@@ -78,7 +79,7 @@ export const App : React.FunctionComponent<{
 
     const fetchRunning = React.useCallback(() => {
         lastRunningRefresh.current = Date.now();
-        hass.callWS({type: "scene_studio/get_dynamic_scenes"}).then(result => {
+        hass.callWS({type: "mb_scene_creator/get_dynamic_scenes"}).then(result => {
             setRunning(result?.dynamic_scenes ?? []);
         }).catch(() => {
             /* intentional */
@@ -107,18 +108,18 @@ export const App : React.FunctionComponent<{
         return map;
     }, [presets]);
 
-    const favorites = (): Array<string> => readLocalStorage<Array<string>>("scene_studio_apply_page_favorite_presets", []);
+    const favorites = (): Array<string> => readLocalStorage<Array<string>>("mb_scene_creator_apply_page_favorite_presets", []);
 
     const activateScene = (id: string) => {
-        hass.callService("scene_studio", "activate_saved_scene", {id: id}).finally(() => fetchRunning());
+        hass.callService("mb_scene_creator", "activate_saved_scene", {id: id}).finally(() => fetchRunning());
     };
 
     const stopRunning = (id: string) => {
-        hass.callService("scene_studio", "stop_dynamic_scene", {id: id}).finally(() => fetchRunning());
+        hass.callService("mb_scene_creator", "stop_dynamic_scene", {id: id}).finally(() => fetchRunning());
     };
 
     const openNewScene = (areaId?: string) => {
-        const last = readLocalStorage<string>("scene_studio_last_preset", "");
+        const last = readLocalStorage<string>("mb_scene_creator_last_preset", "");
         const presetId = last && presetMap[last] ? last : (favorites()[0] ?? "");
         setDraft({
             name: "",
@@ -140,7 +141,7 @@ export const App : React.FunctionComponent<{
                 hass={hass}
                 narrow={narrow}
             />
-            <div slot="title">Scene Studio</div>
+            <div slot="title">MB Scene Creator</div>
 
             <div className={"sp-tabs"} role={"tablist"}>
                 <button role={"tab"} aria-selected={tab !== "presets"} className={"sp-tab" + (tab !== "presets" ? " active" : "")} onClick={() => setTab("scenes")}>

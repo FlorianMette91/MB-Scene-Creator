@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 import {useState} from "react";
 
 // Adapted from https://gist.github.com/jamesfulford/a7f1fcead386e76bfd9d36136e0da6da
