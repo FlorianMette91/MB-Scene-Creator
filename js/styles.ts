@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): styles of the panel. Colors come from the Home Assistant theme variables,
 // so the panel follows light and dark themes. Wide screens (≥ 900 px) get a room list on the left
 // and the scene editor as a side panel.

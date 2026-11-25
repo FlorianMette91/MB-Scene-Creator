@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 import HaSelector, {HaSelectorProps} from "./HaSelector";
 
 export interface HaTargetSelectorValue {

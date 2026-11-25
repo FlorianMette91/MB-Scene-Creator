@@ -1,146 +1,69 @@
-<p align="center"><img src="https://raw.githubusercontent.com/andrejem/scene-studio/main/assets/logo/scene-studio.svg" width="120" alt="Scene Studio"></p>
+# MB Scene Creator
 
-<h1 align="center">Scene Studio</h1>
+Eigene Lichtszenen für Home Assistant – mit **Farbe, Farbsättigung und Helligkeit pro Lampe**.
 
-Light scenes for **every** light in Home Assistant – no bridge, no vendor lock-in, no account.
-Pick one of 120+ color presets or make your own from colors or a photo, save scenes for your rooms, let the
-colors drift slowly as dynamic scenes, let the lights follow the album cover of your music and put
-each room on your dashboard with the room card.
+Dieses eigenständig gepflegte Projekt von [FlorianMette91](https://github.com/FlorianMette91)
+basiert auf [Scene Studio 3.7.1 von Michael Andrejews](https://github.com/andrejem/scene-studio)
+und ursprünglich auf [Scene Presets von Sören Beye](https://github.com/Hypfer/hass-scene_presets).
+Die Lizenz ist Apache-2.0; Herkunft und Änderungen stehen in [NOTICE](NOTICE).
 
-<p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=andrejem&repository=scene-studio&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open Scene Studio in HACS."></a>
-  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=scene_studio"><img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant instance and start setting up Scene Studio."></a>
-</p>
+## Installation über HACS
 
-<p align="center">
-  <a href="https://hacs.xyz/"><img src="https://img.shields.io/badge/HACS-Default-41BDF5.svg" alt="HACS Default"></a>
-  <a href="https://github.com/andrejem/scene-studio/releases"><img src="https://img.shields.io/github/v/release/andrejem/scene-studio?label=release" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2026.7%2B-41BDF5.svg" alt="Home Assistant 2026.7+">
-  <a href="https://github.com/andrejem/scene-studio/blob/main/LICENSE"><img src="https://img.shields.io/github/license/andrejem/scene-studio" alt="License"></a>
-</p>
+Voraussetzung: Home Assistant **2026.7 oder neuer** und HACS.
 
-<table>
-  <tr>
-    <td width="33%"><img src="https://raw.githubusercontent.com/andrejem/scene-studio/main/img/panel-scenes.png" alt="Scenes by room"></td>
-    <td width="33%"><img src="https://raw.githubusercontent.com/andrejem/scene-studio/main/img/scene-editor.png" alt="Scene editor"></td>
-    <td width="33%"><img src="https://raw.githubusercontent.com/andrejem/scene-studio/main/img/room-card.png" alt="Room card"></td>
-  </tr>
-  <tr>
-    <td align="center">Scenes by room</td>
-    <td align="center">Scene editor</td>
-    <td align="center">Room card</td>
-  </tr>
-</table>
+1. In HACS oben rechts **⋮ → Benutzerdefinierte Repositories** öffnen.
+2. `https://github.com/FlorianMette91/MB-Scene-Creator` eintragen, Typ **Integration** wählen.
+3. **MB Scene Creator** herunterladen und Home Assistant neu starten.
+4. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach
+   **MB Scene Creator** suchen und hinzufügen.
+5. **MB Scene Creator** in der Seitenleiste öffnen.
 
-## Features
+[In HACS öffnen](https://my.home-assistant.io/redirect/hacs_repository/?owner=FlorianMette91&repository=MB-Scene-Creator&category=integration)
 
-| | |
-|---|---|
-| **Presets for any light** | 120+ built-in color presets, applied to lights, groups, areas, floors or labels. Lights that can only do white get the matching color temperature. |
-| **Saved scenes** | Preset + lights + settings stored in Home Assistant, each one a `scene.*` entity for dashboards, automations and voice. [Saved scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Saved%20scenes.md) |
-| **Panel** | Scenes grouped by room, presets with search and favorites, a scene editor, running dynamic scenes at a glance. **Arrange** scenes by drag and drop – the same order in every room if you like, room cards follow it. Phone and desktop, light and dark theme, English and German. [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) |
-| **Dynamic scenes** | The colors drift slowly between the lights. With **per-light timing** every light changes on its own schedule. [Per-light timing](https://github.com/andrejem/scene-studio/blob/main/docs/Per-light%20timing.md) |
-| **Lights of a scene** | Brightness per light, lights that only join when they are on, lights the scene does not control, light groups as one light. Gradient lamps (e.g. Hue Signe in Zigbee2MQTT) show all colors of the preset. [Lights of a scene](https://github.com/andrejem/scene-studio/blob/main/docs/Lights%20of%20a%20scene.md) |
-| **Lamp modes** | Give one lamp another scene of the room while the rest keeps going. [Lamp modes](https://github.com/andrejem/scene-studio/blob/main/docs/Lamp%20modes.md) |
-| **Time of day scenes** | One scene that starts another scene depending on whether it is day, dusk or night – set by the sun, by the clock or both, so one setting works in summer and winter. It can change by itself while the lights are on. [Time of day scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Time%20of%20day.md) |
-| **Music scenes** | The lights take the colors of the album cover that is playing and change with every new cover. They can start by themselves when music starts or follows you into another room, and return to their state before when the music stops. A scene can also take the music of any room. You choose whether the largest areas or the most vivid colors of the cover count, and which lights show the main color and which the accents. [Music scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Music%20scenes.md) |
-| **Own presets** | Pick colors (color or white tones, like the Hue app) or let a photo give them – no JSON, no restart. Built-in presets can get other colors or another default brightness, or be hidden. **Color intensity** per scene makes any preset more vivid or paler. [Own presets](https://github.com/andrejem/scene-studio/blob/main/docs/Scene%20from%20photo.md) |
-| **Room card** | One card per room: brightness slider, scene tiles with pictures (in the order set in the panel, the active scene outlined), light rows. Built from the area automatically, visual editor. [Room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md) |
+Das Projekt ist als benutzerdefiniertes HACS-Repository installierbar. Es ist nicht
+in der allgemeinen HACS-Standardliste eingetragen und kein Supervisor-Add-on.
 
-## Installation
+Manuell: `custom_components/mb_scene_creator` nach `/config/custom_components/`
+kopieren und anschließend Home Assistant neu starten.
 
-### HACS
+## Eigene Farben pro Lampe
 
-Scene Studio is part of the HACS default repositories.
+Im Szeneneditor unter **Lampen dieser Szene** auf **Lampenfarbe wählen** klicken.
+Farbton und Sättigung oder einen Weißton einstellen. Die Helligkeit daneben separat
+in Prozent wählen. **Testen** wendet die Werte an; **Speichern** behält sie dauerhaft.
+**Vorlagenfarbe verwenden** entfernt die individuelle Farbwahl.
 
-1. Search for **Scene Studio** in HACS and download it, or use this button:
+- Eine leere Helligkeit übernimmt die Szenenhelligkeit; 0 schaltet die Lampe beim Start aus.
+- Eigene Farben bleiben bei dynamischen Szenen und Musik-Szenen fest.
+- Sie haben Vorrang vor der globalen Farbintensität und dem Farbverlauf einer Verlaufslampe.
+- Lampen mit ausschließlich Weißlicht erhalten den nächstliegenden Weißton.
+- Weitere Funktionen der Basis sind vorhanden: Vorlagen, eigene Vorlagen aus Fotos,
+  dynamische Szenen, optionale Lampen, Musik-Szenen und Tageszeit-Szenen.
 
-   [![Open your Home Assistant instance and open Scene Studio in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=andrejem&repository=scene-studio&category=integration)
+Details: [Lampen einer Szene](docs/Lights%20of%20a%20scene.md),
+[Panel](docs/Panel.md), [Dienste](docs/Services.md), [Raumkarte](docs/Room%20card.md).
+Die weiterführende Dokumentation ist auf Englisch.
 
-2. Restart Home Assistant.
-3. **Settings → Devices & services → Add integration → Scene Studio**, or use this button:
+## Neben Scene Studio verwenden
 
-   [![Open your Home Assistant instance and start setting up Scene Studio.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=scene_studio)
+MB Scene Creator hat eine eigene Kennung (`mb_scene_creator`), eigene Dienste,
+Szenenspeicher, Browser-Einstellungen und eine eigene Raumkarte
+(`custom:mb-scene-creator-room-card`). Updates von Scene Studio überschreiben dieses
+Projekt nicht. Die beiden Integrationen können unabhängig installiert werden.
 
-If Scene Studio does not show up in the search (older HACS data), add it as a custom repository:
-HACS menu (⋮) → **Custom repositories** → `https://github.com/andrejem/scene-studio`, type
-**Integration**.
+Bestehende Scene-Studio-Szenen und eigene Vorlagen werden **nicht automatisch übernommen**.
+Zum Einstieg eine neue Testszene anlegen. Nicht gleichzeitig dynamische Szenen beider
+Integrationen auf denselben Lampen starten: beide würden sonst die Lampen steuern.
+Der vorhandene Importdialog betrifft das ältere **Scene Presets**, nicht Scene Studio.
 
-### Manual
+## Updates und Entwicklung
 
-Copy `custom_components/scene_studio` into the `custom_components` folder of your Home Assistant
-configuration, restart Home Assistant and add the integration as above.
+Neue veröffentlichte Versionen dieses Repositorys werden über HACS angeboten.
+Vor Updates ein Home-Assistant-Backup erstellen. Eigene Vorlagen liegen im persistenten
+Verzeichnis `userdata` der Integration.
 
-Requires Home Assistant 2026.7 or newer.
+Entwicklungsablauf und Prüfungen: [DEVELOPMENT.md](DEVELOPMENT.md).
+Fehler oder Wünsche: [Issues](https://github.com/FlorianMette91/MB-Scene-Creator/issues).
 
-### Coming from Scene Presets?
-
-Scene Studio is a separate integration and can be installed next to Scene Presets. It brings your
-saved scenes, own presets and scene entities (with the same entity IDs and areas) over in one step:
-[Coming from Scene Presets](https://github.com/andrejem/scene-studio/blob/main/docs/Coming%20from%20Scene%20Presets.md).
-
-## Quick start
-
-1. Open **Scene Studio** in the sidebar and switch to the **Presets** tab.
-2. Under **Apply to**, choose a room (area) or a few lights.
-3. Tap presets to try them on your lights. **Once** applies the colors, **Dynamic** keeps them moving.
-4. Click **Save as scene**, give it a name and a room, **Save**.
-5. Your scene is now in the **Scenes** tab and a `scene.*` entity: use it on a dashboard (or add the
-   [room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md)), in automations or with voice assistants.
-
-![Panel on a wide screen](https://raw.githubusercontent.com/andrejem/scene-studio/main/img/panel-desktop-light.png)
-
-## Automations
-
-Every saved scene is a scene entity, so an automation only needs `scene.turn_on`. The scene editor
-shows the entity ID with a **Copy** button under *Use in automations*.
-
-```yaml
-action: scene.turn_on
-target:
-  entity_id: scene.living_room_relax
-```
-
-All services (`apply_preset`, `start_dynamic_scene`, `save_scene`, `activate_saved_scene`, …) are
-described in the [service reference](https://github.com/andrejem/scene-studio/blob/main/docs/Services.md). Preset IDs are listed in the
-[preset overview](https://github.com/andrejem/scene-studio/blob/main/custom_components/scene_studio/assets/Readme.md).
-
-## Good to know about dynamic scenes
-
-- A dynamic scene stops by itself once all of its lights are turned off.
-- Starting a dynamic scene on a light that is already part of another one stops the other one.
-- Lights of a dynamic scene that you turn off are not turned on again by it.
-- Many lights with very short intervals can put a lot of load on a Zigbee network.
-- Lights react with different delays; a longer transition hides that.
-- Dynamic scenes do not survive a restart of Home Assistant (saved scenes do – start them again).
-- The first step of a dynamic scene always uses a 0.5 s transition and no smart shuffle, so the
-  result is instant and all colors of the preset get into the rotation.
-
-## Documentation
-
-| Page | Content |
-|---|---|
-| [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) | Scenes tab (arrange scenes), presets tab (new presets, hidden presets), scene editor |
-| [Saved scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Saved%20scenes.md) | Scene entities, saving and editing, services |
-| [Lights of a scene](https://github.com/andrejem/scene-studio/blob/main/docs/Lights%20of%20a%20scene.md) | Brightness per light, only if on, leave out, groups as one light, areas |
-| [Lamp modes](https://github.com/andrejem/scene-studio/blob/main/docs/Lamp%20modes.md) | Another scene for single lamps of a room |
-| [Music scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Music%20scenes.md) | Colors from the album cover, starting by itself, examples |
-| [Time of day scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Time%20of%20day.md) | Day, dusk and night by sun and clock, scenes that follow them |
-| [Per-light timing](https://github.com/andrejem/scene-studio/blob/main/docs/Per-light%20timing.md) | Dynamic scenes where every light has its own rhythm |
-| [Smart shuffle](https://github.com/andrejem/scene-studio/blob/main/docs/Smart%20Shuffle.md) | How colors are spread over the lights |
-| [Own presets](https://github.com/andrejem/scene-studio/blob/main/docs/Scene%20from%20photo.md) | Presets from colors or photos, changing built-in presets |
-| [Custom presets](https://github.com/andrejem/scene-studio/blob/main/docs/Custom%20Presets.md) | Presets as JSON files (for developers) |
-| [Room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md) | Dashboard card, all options |
-| [Services](https://github.com/andrejem/scene-studio/blob/main/docs/Services.md) | All services and their fields |
-| [Coming from Scene Presets](https://github.com/andrejem/scene-studio/blob/main/docs/Coming%20from%20Scene%20Presets.md) | Import of scenes, presets and scene entities |
-
-## Credits and license
-
-Scene Studio is based on [Scene Presets](https://github.com/Hypfer/hass-scene_presets) by
-[Sören Beye (Hypfer)](https://github.com/Hypfer). The built-in presets, the color logic and the
-dynamic scene engine are his work. The pictures of the presets are photos from Unsplash and Wikimedia
-Commons, and the colors of each preset are taken from its photo; photographers and licenses are listed
-in the [image credits](https://github.com/andrejem/scene-studio/blob/main/custom_components/scene_studio/assets/CREDITS.md).
-
-Licensed under the [Apache License 2.0](https://github.com/andrejem/scene-studio/blob/main/LICENSE); see [NOTICE](https://github.com/andrejem/scene-studio/blob/main/NOTICE) for the attribution and the
-list of changes.
+Die erste Version wurde automatisiert geprüft; Tests mit realen Lampen und deiner
+Home-Assistant-Installation stehen noch aus.

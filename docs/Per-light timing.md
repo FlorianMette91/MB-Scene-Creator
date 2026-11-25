@@ -6,7 +6,7 @@ options in the scene editor. The *Running* strip shows the range (e.g. *new colo
 By default a dynamic scene changes **all** lights at the same moment, every `interval` seconds,
 using the same `transition`. With many lights this can look synchronized.
 
-Setting any of the following optional fields on `scene_studio.start_dynamic_scene` switches the
+Setting any of the following optional fields on `mb_scene_creator.start_dynamic_scene` switches the
 scene to per-light timing:
 
 | Field            | Meaning                                                         |
@@ -27,14 +27,14 @@ Lights that are turned off are left alone; the scene stops once all its lights a
 
 ## Panel
 
-In the Scene Studio sidebar panel, enable **Dynamic** and then **Per-light timing**.
+In the MB Scene Creator sidebar panel, enable **Dynamic** and then **Per-light timing**.
 The Interval and Transition sliders are replaced by Interval min/max and Transition min/max.
 Active per-light scenes show their ranges on the tile (e.g. `I: 20-60s, T: 5-15s`).
 
 ## Example
 
 ```yaml
-action: scene_studio.start_dynamic_scene
+action: mb_scene_creator.start_dynamic_scene
 data:
   preset_id: 19175aca-cd4d-4e3d-b144-03f96edbf412
   targets:

@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Modified by andrejem (2026): heading also as headerTitle (ha-dialog of Home Assistant 2026.x)
 import React, {Component, ReactNode} from "react";
 

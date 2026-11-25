@@ -28,7 +28,7 @@ A new cover means new colors. When the music stops, the lights go back to how th
 
 ## Create a music scene
 
-1. Open **Scene Studio** → **Scenes** → **New scene** in the room you want.
+1. Open **MB Scene Creator** → **Scenes** → **New scene** in the room you want.
 2. Under **Preset**, tap **Change** and choose **Music** (category *Basics*).
 3. Choose the lights under **Apply to**, usually the room.
 4. Under **Music**, check the settings:
@@ -49,7 +49,7 @@ as for every scene.
 
 ## Which colors the lights get
 
-Scene Studio takes up to five colors from the cover. The first one is the **main color**, the others
+MB Scene Creator takes up to five colors from the cover. The first one is the **main color**, the others
 are **accents**. Two settings decide what your lights show; if you touch neither, everything works
 as before.
 
@@ -104,7 +104,7 @@ starting with the color of their role. A role given to a group applies to its li
 | Speaker *Any speaker that is playing*: music in another room | That cover. If several play, the one that started last |
 | Speaker *Any speaker that is playing*: that speaker stops, another one still plays | The scene follows the other one instead of ending |
 | The music stops or moves to another room | After 30 seconds the lights return to their state before the music scene (also *off*) |
-| You select another scene on these lights – a scene of Scene Studio or a scene of Home Assistant (`scene.turn_on`, `scene.apply`) | The music scene ends, nothing is restored |
+| You select another scene on these lights – a scene of MB Scene Creator or a scene of Home Assistant (`scene.turn_on`, `scene.apply`) | The music scene ends, nothing is restored |
 | You stop it: the stop button of the panel, `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets` or `stop_all_dynamic_scenes` | The music scene ends, the lights stay as they are |
 | You dim a light or change its color yourself | The music scene goes on; the next cover sets its colors again |
 | You (or a motion light) turn all lights of the scene off | The music scene ends, nothing is restored. Lights turned on later are normal light |
@@ -182,7 +182,7 @@ change with the next cover. Without music nothing happens.
 The same works in automations with `apply_preset` and the ID of the Music preset:
 
 ```yaml
-action: scene_studio.apply_preset
+action: mb_scene_creator.apply_preset
 data:
   preset_id: b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42   # Music
   targets:
@@ -222,7 +222,7 @@ Saving a music scene with a service – `music` is optional, without `media_play
 the room is used:
 
 ```yaml
-action: scene_studio.save_scene
+action: mb_scene_creator.save_scene
 data:
   name: Kitchen music
   preset_id: b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42   # Music

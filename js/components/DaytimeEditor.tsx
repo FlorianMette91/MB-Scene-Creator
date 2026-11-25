@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): time of day scenes (3.7) - a scene that stands for another saved scene per
 // phase (day, dusk, night), and the settings when these phases begin (sun elevation and clock times).
 
@@ -61,7 +62,7 @@ export const DaytimeSettings: React.FunctionComponent<{
     useEffect(() => {
         window.clearTimeout(timer.current);
         timer.current = window.setTimeout(() => {
-            hass.callWS({type: "scene_studio/preview_daytime", config}).then((result: DaytimeState) => {
+            hass.callWS({type: "mb_scene_creator/preview_daytime", config}).then((result: DaytimeState) => {
                 setPreview({...result, following: []});
             }).catch(() => {/* shown when saving */});
         }, 300);
@@ -73,7 +74,7 @@ export const DaytimeSettings: React.FunctionComponent<{
 
     const save = () => {
         setBusy(true);
-        hass.callWS({type: "scene_studio/set_daytime", config}).then((result: DaytimeState) => {
+        hass.callWS({type: "mb_scene_creator/set_daytime", config}).then((result: DaytimeState) => {
             onSaved(result);
             onClose();
         }).catch(err => setError(err?.message ?? String(err))).finally(() => setBusy(false));
@@ -197,7 +198,7 @@ export const DaytimeEditor: React.FunctionComponent<{
         setFollow(!!saved.follow);
         setSettings(false);
         setError("");
-        hass.callWS({type: "scene_studio/get_daytime"}).then(setState).catch(() => setState(null));
+        hass.callWS({type: "mb_scene_creator/get_daytime"}).then(setState).catch(() => setState(null));
     }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!open) {
@@ -243,7 +244,7 @@ export const DaytimeEditor: React.FunctionComponent<{
         setBusy(true);
         setError("");
         try {
-            await hass.callService("scene_studio", "save_scene", {
+            await hass.callService("mb_scene_creator", "save_scene", {
                 id: sceneId,
                 name: name.trim(),
                 preset_id: DAYTIME_PRESET_ID,
@@ -264,7 +265,7 @@ export const DaytimeEditor: React.FunctionComponent<{
         if (!editing || !window.confirm(t("delete_confirm", {name: editing.name}))) {
             return;
         }
-        hass.callService("scene_studio", "delete_saved_scene", {id: editing.id}).then(() => {
+        hass.callService("mb_scene_creator", "delete_saved_scene", {id: editing.id}).then(() => {
             onSaved();
             onClose();
         }).catch(err => setError(err?.message ?? String(err)));

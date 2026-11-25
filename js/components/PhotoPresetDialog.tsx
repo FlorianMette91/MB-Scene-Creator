@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): presets of the user - create a preset from a photo or from chosen colors
 // (the picture is then the gradient of the colors), edit and delete own presets, change the colors and
 // default brightness of built-in presets (the original can be restored; their picture stays) or hide them.
@@ -188,7 +189,7 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
             setInfo(t("preview_no_targets"));
             return;
         }
-        const result = await hass.callWS({type: "scene_studio/resolve_targets", targets: targets});
+        const result = await hass.callWS({type: "mb_scene_creator/resolve_targets", targets: targets});
         const lights = (result?.lights ?? [])
             .map((l: any) => l.entity_id)
             .filter((id: string) => (hass.states[id]?.attributes?.supported_color_modes ?? []).some((m: string) => COLOR_MODES.includes(m)));
@@ -225,14 +226,14 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
         const lights = colors.map(c => ({x: c.x, y: c.y}));
         const bri = Math.max(1, Math.min(255, Math.round(brightness * 2.55)));
         if (isBuiltin) {
-            const msg: any = {type: "scene_studio/set_preset_image", preset_id: preset!.id};
+            const msg: any = {type: "mb_scene_creator/set_preset_image", preset_id: preset!.id};
             if (colorsChanged) msg.lights = lights;
             if (briChanged) msg.bri = bri;
             await hass.callWS(msg);
             return;
         }
         const msg: any = {
-            type: "scene_studio/save_custom_preset",
+            type: "mb_scene_creator/save_custom_preset",
             name: name.trim(),
             bri: bri,
             lights: lights,
@@ -258,16 +259,16 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
         if (!preset || !window.confirm(t("preset_delete_confirm", {name: preset.name}))) {
             return;
         }
-        run(() => hass.callWS({type: "scene_studio/delete_custom_preset", preset_id: preset.id}));
+        run(() => hass.callWS({type: "mb_scene_creator/delete_custom_preset", preset_id: preset.id}));
     };
 
-    const hide = () => run(() => hass.callWS({type: "scene_studio/set_preset_hidden", preset_id: preset!.id, hidden: true}));
+    const hide = () => run(() => hass.callWS({type: "mb_scene_creator/set_preset_hidden", preset_id: preset!.id, hidden: true}));
 
     const reset = () => {
         if (!preset || !window.confirm(t("preset_reset_confirm", {name: preset.name}))) {
             return;
         }
-        run(() => hass.callWS({type: "scene_studio/reset_preset", preset_id: preset.id}));
+        run(() => hass.callWS({type: "mb_scene_creator/reset_preset", preset_id: preset.id}));
     };
 
     const imageSrc = image ?? (fromColors && (colorsChanged || !preset) ? null : presetImage(preset) ?? null);

@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Modified by andrejem (2026): per-light timing controls, saved scenes, English and German texts,
 // presets from photos (PhotoPresetDialog). Reworked into the "Presets" tab: lights to apply to with a
 // short summary, once / dynamic, brightness in percent, further options folded away, search and
@@ -34,29 +35,29 @@ export const PresetApplyPage: React.FunctionComponent<{
     onApplied,
     onSaveAsScene
 }): React.JSX.Element => {
-    const [targets, setTargets] = useLocalStorage<HaTargetSelectorValue>("scene_studio_apply_page_targets", {});
+    const [targets, setTargets] = useLocalStorage<HaTargetSelectorValue>("mb_scene_creator_apply_page_targets", {});
 
     // same storage keys as before, so the settings people chose stay
-    const [shuffle, setShuffle] = useLocalStorage<boolean>("scene_studio_apply_page_shuffle", DEFAULT_TUNABLES.shuffle);
-    const [smartShuffle, setSmartShuffle] = useLocalStorage<boolean>("scene_studio_apply_page_smart_shuffle", DEFAULT_TUNABLES.smartShuffle);
-    const [customBrightness, setCustomBrightness] = useLocalStorage<boolean>("scene_studio_apply_page_custom_brightness", DEFAULT_TUNABLES.customBrightness);
-    const [customBrightnessValue, setCustomBrightnessValue] = useLocalStorage<number>("scene_studio_apply_page_custom_brightness_value", DEFAULT_TUNABLES.customBrightnessValue);
-    const [saturation, setSaturation] = useLocalStorage<number>("scene_studio_apply_page_saturation", DEFAULT_TUNABLES.saturation);
-    const [customTransition, setCustomTransition] = useLocalStorage<boolean>("scene_studio_apply_page_custom_transition", DEFAULT_TUNABLES.customTransition);
-    const [customTransitionValue, setCustomTransitionValue] = useLocalStorage<number>("scene_studio_apply_page_custom_transition_value", DEFAULT_TUNABLES.customTransitionValue);
-    const [dynamic, setDynamic] = useLocalStorage<boolean>("scene_studio_apply_page_dynamic", DEFAULT_TUNABLES.dynamic);
-    const [dynamicTransitionValue, setDynamicTransitionValue] = useLocalStorage<number>("scene_studio_apply_page_dynamic_transition_value", DEFAULT_TUNABLES.dynamicTransitionValue);
-    const [dynamicIntervalValue, setDynamicIntervalValue] = useLocalStorage<number>("scene_studio_apply_page_dynamic_interval_value", DEFAULT_TUNABLES.dynamicIntervalValue);
-    const [dynamicPerLight, setDynamicPerLight] = useLocalStorage<boolean>("scene_studio_apply_page_dynamic_per_light", DEFAULT_TUNABLES.dynamicPerLight);
-    const [dynamicIntervalMin, setDynamicIntervalMin] = useLocalStorage<number>("scene_studio_apply_page_dynamic_interval_min", DEFAULT_TUNABLES.dynamicIntervalMin);
-    const [dynamicIntervalMax, setDynamicIntervalMax] = useLocalStorage<number>("scene_studio_apply_page_dynamic_interval_max", DEFAULT_TUNABLES.dynamicIntervalMax);
-    const [dynamicTransitionMin, setDynamicTransitionMin] = useLocalStorage<number>("scene_studio_apply_page_dynamic_transition_min", DEFAULT_TUNABLES.dynamicTransitionMin);
-    const [dynamicTransitionMax, setDynamicTransitionMax] = useLocalStorage<number>("scene_studio_apply_page_dynamic_transition_max", DEFAULT_TUNABLES.dynamicTransitionMax);
+    const [shuffle, setShuffle] = useLocalStorage<boolean>("mb_scene_creator_apply_page_shuffle", DEFAULT_TUNABLES.shuffle);
+    const [smartShuffle, setSmartShuffle] = useLocalStorage<boolean>("mb_scene_creator_apply_page_smart_shuffle", DEFAULT_TUNABLES.smartShuffle);
+    const [customBrightness, setCustomBrightness] = useLocalStorage<boolean>("mb_scene_creator_apply_page_custom_brightness", DEFAULT_TUNABLES.customBrightness);
+    const [customBrightnessValue, setCustomBrightnessValue] = useLocalStorage<number>("mb_scene_creator_apply_page_custom_brightness_value", DEFAULT_TUNABLES.customBrightnessValue);
+    const [saturation, setSaturation] = useLocalStorage<number>("mb_scene_creator_apply_page_saturation", DEFAULT_TUNABLES.saturation);
+    const [customTransition, setCustomTransition] = useLocalStorage<boolean>("mb_scene_creator_apply_page_custom_transition", DEFAULT_TUNABLES.customTransition);
+    const [customTransitionValue, setCustomTransitionValue] = useLocalStorage<number>("mb_scene_creator_apply_page_custom_transition_value", DEFAULT_TUNABLES.customTransitionValue);
+    const [dynamic, setDynamic] = useLocalStorage<boolean>("mb_scene_creator_apply_page_dynamic", DEFAULT_TUNABLES.dynamic);
+    const [dynamicTransitionValue, setDynamicTransitionValue] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_transition_value", DEFAULT_TUNABLES.dynamicTransitionValue);
+    const [dynamicIntervalValue, setDynamicIntervalValue] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_interval_value", DEFAULT_TUNABLES.dynamicIntervalValue);
+    const [dynamicPerLight, setDynamicPerLight] = useLocalStorage<boolean>("mb_scene_creator_apply_page_dynamic_per_light", DEFAULT_TUNABLES.dynamicPerLight);
+    const [dynamicIntervalMin, setDynamicIntervalMin] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_interval_min", DEFAULT_TUNABLES.dynamicIntervalMin);
+    const [dynamicIntervalMax, setDynamicIntervalMax] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_interval_max", DEFAULT_TUNABLES.dynamicIntervalMax);
+    const [dynamicTransitionMin, setDynamicTransitionMin] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_transition_min", DEFAULT_TUNABLES.dynamicTransitionMin);
+    const [dynamicTransitionMax, setDynamicTransitionMax] = useLocalStorage<number>("mb_scene_creator_apply_page_dynamic_transition_max", DEFAULT_TUNABLES.dynamicTransitionMax);
 
-    const [favoritePresets, setFavoritePresets] = useLocalStorage<Array<string>>("scene_studio_apply_page_favorite_presets", []);
-    const [lastPresetId, setLastPresetId] = useLocalStorage<string>("scene_studio_last_preset", "");
-    const [category, setCategory] = useLocalStorage<string>("scene_studio_category", "all");
-    const [moreOpen, setMoreOpen] = useLocalStorage<boolean>("scene_studio_more_open", false);
+    const [favoritePresets, setFavoritePresets] = useLocalStorage<Array<string>>("mb_scene_creator_apply_page_favorite_presets", []);
+    const [lastPresetId, setLastPresetId] = useLocalStorage<string>("mb_scene_creator_last_preset", "");
+    const [category, setCategory] = useLocalStorage<string>("mb_scene_creator_category", "all");
+    const [moreOpen, setMoreOpen] = useLocalStorage<boolean>("mb_scene_creator_more_open", false);
     const [search, setSearch] = useState("");
     const [notice, setNotice] = useState("");
     // feedback after tapping a preset: row on top of the card, outlined tile, short message at the bottom
@@ -80,7 +81,7 @@ export const PresetApplyPage: React.FunctionComponent<{
     const [showHidden, setShowHidden] = useState<boolean>(false);
     const hiddenPresets = useMemo(() => presets.filter(p => p.user_hidden), [presets]);
     const unhide = (id: string) => {
-        hass.callWS({type: "scene_studio/set_preset_hidden", preset_id: id, hidden: false})
+        hass.callWS({type: "mb_scene_creator/set_preset_hidden", preset_id: id, hidden: false})
             .then(() => onPresetsChanged?.())
             .catch(() => undefined);
     };
@@ -116,7 +117,7 @@ export const PresetApplyPage: React.FunctionComponent<{
         setLastPresetId(id);
         setApplied({id, at: Date.now(), dynamic: tun.dynamic});
         const {service, payload} = tunablesToCall(id, targets, tun);
-        hass.callService("scene_studio", service, payload).finally(() => {
+        hass.callService("mb_scene_creator", service, payload).finally(() => {
             onApplied?.();
         });
     };

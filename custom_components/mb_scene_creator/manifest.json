@@ -1,0 +1,21 @@
+{
+    "domain": "mb_scene_creator",
+    "name": "MB Scene Creator",
+    "after_dependencies": [
+        "http",
+        "mqtt"
+    ],
+    "categories": [
+        "lighting"
+    ],
+    "codeowners": [
+        "@FlorianMette91"
+    ],
+    "config_flow": true,
+    "documentation": "https://github.com/FlorianMette91/MB-Scene-Creator",
+    "integration_type": "service",
+    "iot_class": "calculated",
+    "issue_tracker": "https://github.com/FlorianMette91/MB-Scene-Creator/issues",
+    "requirements": [],
+    "version": "0.1.0"
+}

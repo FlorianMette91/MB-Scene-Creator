@@ -1,4 +1,5 @@
-"""Test setup: make the integration of this repo importable as custom_components.scene_studio."""
+# Modified for MB Scene Creator (2026): independent integration namespace.
+"""Test setup: make the integration of this repo importable as custom_components.mb_scene_creator."""
 
 import os
 

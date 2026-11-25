@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): color picker for preset colors with two tabs like the Hue app:
 // "Color" (hue and saturation at full brightness) and "White" (color temperature, warm to cool).
 // Works on CIE xy, the color space of the presets, so a white tone is stored exactly.

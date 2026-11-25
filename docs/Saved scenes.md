@@ -2,7 +2,7 @@
 
 A saved scene stores a preset together with its lights and all settings (brightness, transition,
 shuffle, dynamic mode incl. per-light timing, lights of the scene). Saved scenes are kept in Home
-Assistant storage (`.storage/scene_studio.saved_scenes`) and survive restarts.
+Assistant storage (`.storage/mb_scene_creator.saved_scenes`) and survive restarts.
 
 Every saved scene is also a **scene entity** (e.g. `scene.living_room_relax`) with the preset
 picture as entity picture. Turning it on (`scene.turn_on`, a dashboard tile, the
@@ -11,7 +11,7 @@ keeps its entity ID. The area of the scene entity is the **room** of the scene i
 the room card.
 
 The state of the scene entity is the time it was **last activated** – also when it was started with
-`scene_studio.activate_saved_scene` (panel, buttons, automations); a lamp mode (`targets`) does not
+`mb_scene_creator.activate_saved_scene` (panel, buttons, automations); a lamp mode (`targets`) does not
 count. Panel and room card outline that scene as the active one. Attributes: `saved_scene_id`,
 `preset_id`, `dynamic`, `music` and `order` (position set with **Arrange** in the panel).
 
@@ -47,9 +47,9 @@ The scene editor shows the entity ID with a **Copy** button (*Use in automations
 
 | Service                              | Fields                                                                                                  |
 |--------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `scene_studio.save_scene`           | `name`, `preset_id`, `targets`, optional `id` (overwrite), `dynamic`, `exclude`, `keep_groups`, `optional`, `light_brightness` and all fields of `apply_preset` / `start_dynamic_scene` |
-| `scene_studio.activate_saved_scene` | `id`, optional `dynamic` (override the saved mode), optional `targets` (apply to other lights)         |
-| `scene_studio.delete_saved_scene`   | `id` (also removes the scene entity)                                                                    |
+| `mb_scene_creator.save_scene`           | `name`, `preset_id`, `targets`, optional `id` (overwrite), `dynamic`, `exclude`, `keep_groups`, `optional`, `light_brightness` and all fields of `apply_preset` / `start_dynamic_scene` |
+| `mb_scene_creator.activate_saved_scene` | `id`, optional `dynamic` (override the saved mode), optional `targets` (apply to other lights)         |
+| `mb_scene_creator.delete_saved_scene`   | `id` (also removes the scene entity)                                                                    |
 
 `activate_saved_scene` accepts an optional `dynamic` flag that overrides the saved mode:
 `dynamic: false` applies a dynamic scene once with spread colors (and stops a dynamic scene that is
@@ -59,13 +59,13 @@ With `targets`, `activate_saved_scene` applies the scene to other lights – use
 [lamp modes](Lamp%20modes.md).
 
 `save_scene` returns the stored scene (including its `id`) as response.
-The websocket command `scene_studio/get_saved_scenes` lists all saved scenes.
+The websocket command `mb_scene_creator/get_saved_scenes` lists all saved scenes.
 All fields: [Services](Services.md).
 
 ## Example
 
 ```yaml
-action: scene_studio.save_scene
+action: mb_scene_creator.save_scene
 data:
   name: Living room relax
   preset_id: e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8

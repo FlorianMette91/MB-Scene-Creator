@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): small form controls of the panel (mode switch, brightness in percent,
 // settings rows, number fields with unit, light picker with a short summary)
 
@@ -401,7 +402,7 @@ export function useTargetLights(hass: any, targets: HaTargetSelectorValue, extra
             setLights([]);
             return;
         }
-        hass.callWS({type: "scene_studio/resolve_targets", targets, exclude: extra.exclude ?? [], keep_groups: extra.keep_groups ?? []})
+        hass.callWS({type: "mb_scene_creator/resolve_targets", targets, exclude: extra.exclude ?? [], keep_groups: extra.keep_groups ?? []})
             .then((r: any) => setLights((r?.lights ?? []).map((l: any) => l.entity_id)))
             .catch(() => setLights([]));
     }, [key]); // eslint-disable-line react-hooks/exhaustive-deps

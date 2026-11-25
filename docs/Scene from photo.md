@@ -59,7 +59,7 @@ Saved scenes and dashboards that use the preset show the change right away.
 
 ## Where it is stored
 
-Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by HACS updates):
+Everything lives in `custom_components/mb_scene_creator/userdata/custom/` (kept by HACS updates):
 
 - `presets.json` - the same file as for [hand-written custom presets](Custom%20Presets.md).
   Presets from the panel are normal entries; changes of built-in presets are stored under
@@ -70,7 +70,7 @@ Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by H
   picture replaced).
 
 Your photos stay private: they are only served to logged-in users of Home Assistant
-(`/api/scene_studio/image/...`). The panel and the scene entities get signed links to them that are
+(`/api/mb_scene_creator/image/...`). The panel and the scene entities get signed links to them that are
 valid for a limited time and renewed automatically, the same way Home Assistant shows camera pictures.
 The pictures of [hand-written custom presets](Custom%20Presets.md) are treated the same way; only the
 pictures of the built-in presets are public files.
@@ -79,8 +79,8 @@ pictures of the built-in presets are public files.
 
 | Command | Fields |
 |---|---|
-| `scene_studio/save_custom_preset` | `name`, `bri` (1-255), `lights` (`[{x, y}]`, 1-10), optional `preset_id` (edit), `image` (base64 or data URL, JPEG/PNG/WebP, max 4 MB), `generated` (picture made from the colors), `category_id` or `new_category`, `default_category_name` |
-| `scene_studio/delete_custom_preset` | `preset_id` |
-| `scene_studio/set_preset_image` | `preset_id` of a built-in preset, `image`, `lights` and/or `bri` (default brightness 1-255) |
-| `scene_studio/reset_preset` | `preset_id` - restores the original (a hidden preset stays hidden) |
-| `scene_studio/set_preset_hidden` | `preset_id` of a built-in preset, `hidden` (true / false) |
+| `mb_scene_creator/save_custom_preset` | `name`, `bri` (1-255), `lights` (`[{x, y}]`, 1-10), optional `preset_id` (edit), `image` (base64 or data URL, JPEG/PNG/WebP, max 4 MB), `generated` (picture made from the colors), `category_id` or `new_category`, `default_category_name` |
+| `mb_scene_creator/delete_custom_preset` | `preset_id` |
+| `mb_scene_creator/set_preset_image` | `preset_id` of a built-in preset, `image`, `lights` and/or `bri` (default brightness 1-255) |
+| `mb_scene_creator/reset_preset` | `preset_id` - restores the original (a hidden preset stays hidden) |
+| `mb_scene_creator/set_preset_hidden` | `preset_id` of a built-in preset, `hidden` (true / false) |

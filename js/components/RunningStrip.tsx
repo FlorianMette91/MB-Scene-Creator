@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): running dynamic scenes at the top of the panel, each with a stop button.
 // Music scenes (3.2) run with a preset of their own (music_<scene id>): shown with the scene name
 // and the cover that is playing.

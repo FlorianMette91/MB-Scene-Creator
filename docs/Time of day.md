@@ -11,7 +11,7 @@ always starts the fitting scene: bright during the day, dimmed in the evening, a
 - A time of day scene is a normal saved scene with its own scene entity. Wherever a scene can be
   started, it can be used.
 - Optionally the scene **changes with the time of day** while the lights are on.
-- The current time of day is also available as the sensor `sensor.scene_studio_time_of_day`
+- The current time of day is also available as the sensor `sensor.mb_scene_creator_time_of_day`
   (`day`, `dusk`, `night`), for your own automations.
 
 ## Setting it up
@@ -62,7 +62,7 @@ Off by default: the scene of the moment is started once and stays until you star
 With **Change with the time of day** the scene keeps watching. When the next time of day begins
 while its lights are on, it changes to the scene of that time, slowly (30 seconds). This ends when
 
-- another scene is started on these lights (Scene Studio or a scene of Home Assistant),
+- another scene is started on these lights (MB Scene Creator or a scene of Home Assistant),
 - you stop it (`stop_dynamic_scenes_for_targets`, `stop_all_dynamic_scenes`, the stop button),
 - or all of its lights are turned off.
 
@@ -76,7 +76,7 @@ Like every saved scene, a time of day scene can be applied to other lights
 table can so turn on only its lamp, in the scene of the current time of day.
 
 ```yaml
-action: scene_studio.activate_saved_scene
+action: mb_scene_creator.activate_saved_scene
 data:
   id: 1b2c3d4e-0000-0000-0000-000000000000
   targets:
@@ -89,7 +89,7 @@ data:
 `daytime`:
 
 ```yaml
-action: scene_studio.save_scene
+action: mb_scene_creator.save_scene
 data:
   name: Living room automatic
   preset_id: d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63

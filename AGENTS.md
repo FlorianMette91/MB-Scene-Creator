@@ -4,14 +4,14 @@ Guidance for contributors and coding agents working on this repository.
 
 ## About this repository
 
-Scene Studio is a Home Assistant custom integration (domain `scene_studio`) that applies color
+MB Scene Creator is a Home Assistant custom integration (domain `mb_scene_creator`) that applies color
 presets to any `light` entity, saves scenes as scene entities and brings a panel and a room card.
 It is based on [Scene Presets](https://github.com/Hypfer/hass-scene_presets) by Sören Beye and can
 be installed next to it; `migrate.py` imports data from Scene Presets (domain `scene_presets`).
 
 ## Layout
 
-- `custom_components/scene_studio/` - the integration (Python, no external requirements)
+- `custom_components/mb_scene_creator/` - the integration (Python, no external requirements)
   - `__init__.py` - service registration and schemas
   - `dynamic_scenes.py` - dynamic scene engine (endless loops applying shuffled presets)
   - `saved_scenes.py` - persistent saved scenes (HA storage) and mapping to service calls
@@ -30,7 +30,7 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     `music_<scene id>`), which `apply_preset` checks first. Sessions per scene: snapshot of the lights,
     auto start (`never`/`follow`/`always`, `when_on`), cover/track changes, return to the snapshot
     30 s after the music stops. Other scenes on the same lights end a session (`release_lights`): scenes
-    of Scene Studio, scenes of Home Assistant (`call_service` event of `scene.turn_on` / `scene.apply`)
+    of MB Scene Creator, scenes of Home Assistant (`call_service` event of `scene.turn_on` / `scene.apply`)
     and the stop services. Lights off ends it too (option `resume`: pause for 30 min instead). A scene
     ended by hand is `_dismissed`: no auto start until its speaker was silent for `STOP_DELAY`.
     Colors (3.6): `extract_cover_palette(data, focus)` returns `colors` (all), `main` and `accent`;
@@ -63,9 +63,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     license and an entry in `assets/CREDITS.md` (photos with a known author and source; no logos,
     brands or recognizable people). Presets are never removed: `"hidden": true` takes them out of the panel
     lists, `replacedBy` names the preset whose picture they show; their ID keeps working.
-  - `brand/` - icon shown by Home Assistant (2026.3+), made from `assets/logo/scene-studio.svg`
-  - `frontend/scene_studio_panel.js` - **built** panel bundle, committed to the repo
-  - `frontend/scene-studio-room-card.js` - room card (plain JS, no build step), served and
+  - `brand/` - icon shown by Home Assistant (2026.3+), made from `assets/logo/mb-scene-creator.svg`
+  - `frontend/mb_scene_creator_panel.js` - **built** panel bundle, committed to the repo
+  - `frontend/mb-scene-creator-room-card.js` - room card (plain JS, no build step), served and
     auto-loaded via `view.py`; borrows Lit from Home Assistant's own elements
   - `services.yaml` - service fields and selectors (names and descriptions as fallback)
   - `translations/en.json` - texts Home Assistant shows at runtime: config flow (abort reasons) and
@@ -136,7 +136,7 @@ npm ci
 npm run build
 ```
 
-Commit the resulting `custom_components/scene_studio/frontend/scene_studio_panel.js`.
+Commit the resulting `custom_components/mb_scene_creator/frontend/mb_scene_creator_panel.js`.
 
 ## Testing
 
@@ -150,6 +150,6 @@ pytest
 
 Everything else is tested in Home Assistant:
 
-1. Copy `custom_components/scene_studio` to `/config/custom_components/` (or install it via HACS).
+1. Copy `custom_components/mb_scene_creator` to `/config/custom_components/` (or install it via HACS).
 2. Restart Home Assistant.
 3. Use Developer Tools > Actions to call the services and watch the lights / the HA log.

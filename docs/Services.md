@@ -1,10 +1,10 @@
 # Services
 
-All services are in the domain `scene_studio`. `targets` takes the usual Home Assistant target
+All services are in the domain `mb_scene_creator`. `targets` takes the usual Home Assistant target
 (`entity_id`, `device_id`, `area_id`, `floor_id`, `label_id`), also with an `exclude` block as the
 target picker of Home Assistant 2026.11 writes it ([Lights of a scene](Lights%20of%20a%20scene.md));
 light groups are resolved to their members unless they are listed in `keep_groups`. Preset IDs are listed in the
-[preset overview](../custom_components/scene_studio/assets/Readme.md); IDs of presets made in the
+[preset overview](../custom_components/mb_scene_creator/assets/Readme.md); IDs of presets made in the
 panel are shown in `userdata/custom/presets.json`.
 Hidden presets (no longer shown in the panel) keep working with their ID.
 The preset **Music** (`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42`) takes the colors of the album cover
@@ -56,7 +56,7 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 All three also end a [music scene](Music%20scenes.md) on these lights; the lights stay as they are.
 
 `get_dynamic_scenes` returns the running dynamic scenes (also as websocket command
-`scene_studio/get_dynamic_scenes`).
+`mb_scene_creator/get_dynamic_scenes`).
 
 ## Saved scenes
 
@@ -96,7 +96,7 @@ Same as turning on the scene entity.
 
 ```yaml
 # Living room in "Rest", a bit darker, with a slow transition
-action: scene_studio.apply_preset
+action: mb_scene_creator.apply_preset
 data:
   preset_id: e03267e7-9914-4f47-97fe-63c0bd317fe7   # Rest
   targets:
@@ -107,7 +107,7 @@ data:
 
 ```yaml
 # Colors drifting slowly, every light on its own schedule
-action: scene_studio.start_dynamic_scene
+action: mb_scene_creator.start_dynamic_scene
 data:
   preset_id: e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8
   targets:
@@ -120,7 +120,7 @@ data:
 
 ```yaml
 # Stop whatever runs in the living room
-action: scene_studio.stop_dynamic_scenes_for_targets
+action: mb_scene_creator.stop_dynamic_scenes_for_targets
 data:
   targets:
     area_id: living_room
@@ -130,12 +130,26 @@ data:
 
 | Command | Purpose |
 |---|---|
-| `scene_studio/get_saved_scenes` | List saved scenes |
-| `scene_studio/get_dynamic_scenes` | List running dynamic scenes |
-| `scene_studio/resolve_targets` | Lights a scene with these targets controls |
-| `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
-| `scene_studio/get_daytime`, `preview_daytime`, `set_daytime` | Time of day: current phase, limits and next changes; what other limits would give; change the limits (admins) |
-| `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
-| `scene_studio/set_preset_hidden` | Hide a built-in preset or show it again (admins) |
-| `scene_studio/set_scene_order` | Order of the saved scenes, `scene_ids` in the new order (admins) |
-| `scene_studio/import_status`, `scene_studio/import` | Import from Scene Presets (admins) |
+| `mb_scene_creator/get_saved_scenes` | List saved scenes |
+| `mb_scene_creator/get_dynamic_scenes` | List running dynamic scenes |
+| `mb_scene_creator/resolve_targets` | Lights a scene with these targets controls |
+| `mb_scene_creator/get_music_scenes` | Active music scenes with speaker, cover and current colors |
+| `mb_scene_creator/get_daytime`, `preview_daytime`, `set_daytime` | Time of day: current phase, limits and next changes; what other limits would give; change the limits (admins) |
+| `mb_scene_creator/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
+| `mb_scene_creator/set_preset_hidden` | Hide a built-in preset or show it again (admins) |
+| `mb_scene_creator/set_scene_order` | Order of the saved scenes, `scene_ids` in the new order (admins) |
+| `mb_scene_creator/import_status`, `mb_scene_creator/import` | Import from Scene Presets (admins) |
+
+## Individual colors (personal edition)
+
+`apply_preset`, `start_dynamic_scene`, and `save_scene` accept optional `light_colors`:
+
+```yaml
+light_colors:
+  light.sofa: [0.65, 0.3]
+light_brightness:
+  light.sofa: 40
+```
+
+Values are finite CIE xy pairs (x: 0–1, y: greater than 0 up to 1).
+Omit a lamp to use the preset. Saved colors override scene saturation, shuffle and gradients.

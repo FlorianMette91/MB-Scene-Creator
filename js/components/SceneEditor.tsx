@@ -1,3 +1,5 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
+// Modified by Codex (2026): individual lamp colors and saturation.
 // Added by andrejem (2026): scene editor (full screen on phones, side panel on wide screens).
 // Holds its own copy of the scene, so editing no longer depends on what the page currently shows.
 // Replaces the former "last action" dialog: the scene entity id is shown for automations.
@@ -7,6 +9,8 @@
 // the editor then shows the speaker and when the scene starts by itself.
 // Gradient lamps (3.3): switch "all colors on gradient lamps", shown when the scene has such a lamp.
 
+import {ColorEditor, COLOR_EDITOR_CSS} from "./ColorEditor";
+import {rgbToHex, xyToRgb} from "../palette";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
@@ -30,6 +34,7 @@ export type SceneDraft = {
     keepGroups: Array<string>,
     optional: Array<string>,
     lightBrightness: {[entityId: string]: number},
+    lightColors?: {[entityId: string]: [number, number]},
     music?: MusicSettings,
     gradient?: boolean
 };
@@ -64,6 +69,8 @@ export const SceneEditor: React.FunctionComponent<{
     const [keepGroups, setKeepGroups] = useState<Array<string>>([]);
     const [optional, setOptional] = useState<Array<string>>([]);
     const [lightBrightness, setLightBrightness] = useState<{[entityId: string]: number}>({});
+    const [lightColors, setLightColors] = useState<{[entityId: string]: [number, number]}>({});
+    const [colorLight, setColorLight] = useState<string | null>(null);
     const [music, setMusic] = useState<MusicSettings>({media_player: "", auto_start: "never", when_on: false});
     const [gradient, setGradient] = useState(true);
     const [sceneLights, setSceneLights] = useState<Array<SceneLight>>([]);
@@ -93,6 +100,8 @@ export const SceneEditor: React.FunctionComponent<{
         setKeepGroups(draft.keepGroups);
         setOptional(draft.optional);
         setLightBrightness(draft.lightBrightness);
+        setLightColors(draft.lightColors ?? {});
+        setColorLight(null);
         setMusic({media_player: "", auto_start: "never", when_on: false, ...(draft.music ?? {})});
         setGradient(draft.gradient !== false);
         setMoreOpen(false);
@@ -111,7 +120,7 @@ export const SceneEditor: React.FunctionComponent<{
             return;
         }
         hass.callWS({
-            type: "scene_studio/resolve_targets",
+            type: "mb_scene_creator/resolve_targets",
             targets: targets,
             exclude: exclude,
             keep_groups: keepGroups,
@@ -239,6 +248,11 @@ export const SceneEditor: React.FunctionComponent<{
         if (Object.keys(perLight).length > 0) {
             payload.light_brightness = perLight;
         }
+        const colors = Object.fromEntries(Object.entries(lightColors).filter(([id]) =>
+            !exclude.includes(id)));
+        if (Object.keys(colors).length) {
+            payload.light_colors = colors;
+        }
         if (!gradient) {
             payload.gradient = false;
         }
@@ -252,7 +266,7 @@ export const SceneEditor: React.FunctionComponent<{
         }
         setError("");
         const {service, payload} = sceneCall();
-        hass.callService("scene_studio", service, payload).catch(err => setError(err?.message ?? String(err)));
+        hass.callService("mb_scene_creator", service, payload).catch(err => setError(err?.message ?? String(err)));
     };
 
     // the scene entity shows up shortly after saving: then put it into the chosen room
@@ -314,7 +328,7 @@ export const SceneEditor: React.FunctionComponent<{
         setBusy(true);
         setError("");
         try {
-            await hass.callService("scene_studio", "save_scene", payload);
+            await hass.callService("mb_scene_creator", "save_scene", payload);
             const areaChanged = !editing || asNew || areaId !== draft?.areaId;
             if (areaChanged) {
                 await assignArea(sceneId).catch(() => {/* the scene is saved, only the room failed */});
@@ -332,7 +346,7 @@ export const SceneEditor: React.FunctionComponent<{
         if (!editing || !window.confirm(t("delete_confirm", {name: editing.name}))) {
             return;
         }
-        hass.callService("scene_studio", "delete_saved_scene", {id: editing.id}).then(() => {
+        hass.callService("mb_scene_creator", "delete_saved_scene", {id: editing.id}).then(() => {
             onSaved();
             onClose();
         }).catch(err => setError(err?.message ?? String(err)));
@@ -370,6 +384,7 @@ export const SceneEditor: React.FunctionComponent<{
                 onClose();
             }
         }}>
+            <style>{COLOR_EDITOR_CSS}</style>
             <div className={"sp-sheet"} role={"dialog"} aria-modal={"true"} aria-label={editing ? t("editor_edit") : t("editor_new")}>
                 <div className={"sp-sheet-head"}>
                     {
@@ -569,6 +584,11 @@ export const SceneEditor: React.FunctionComponent<{
                                     <div className={"sp-list"}>
                                         {sceneLights.map(light => {
                                             const value = lightBrightness[light.entity_id];
+                                            const ownColor = lightColors[light.entity_id];
+                                            const attrs = hass?.states?.[light.entity_id]?.attributes ?? {};
+                                            const canColor = (attrs.supported_color_modes ?? []).some((m: string) =>
+                                                ["xy", "hs", "rgb", "rgbw", "rgbww", "color_temp"].includes(m));
+                                            const xy = ownColor ?? attrs.xy_color ?? [0.3127, 0.329];
                                             const isGroup = keepGroups.includes(light.entity_id);
                                             const isOptional = optional.includes(light.entity_id);
                                             return (
@@ -577,7 +597,7 @@ export const SceneEditor: React.FunctionComponent<{
                                                         <span className={"sp-grow"}>
                                                             {light.name}
                                                             {isGroup && <span className={"sp-secondary sp-small"}> · {t("as_one_light")}</span>}
-                                                            {light.gradient && gradient && <span className={"sp-secondary sp-small"}> · {t("gradient_badge")}</span>}
+                                                            {light.gradient && gradient && !ownColor && <span className={"sp-secondary sp-small"}> · {t("gradient_badge")}</span>}
                                                         </span>
                                                         <span className={"sp-num small"}>
                                                             <input
@@ -601,6 +621,25 @@ export const SceneEditor: React.FunctionComponent<{
                                                             <span className={"sp-unit"}>%</span>
                                                         </span>
                                                     </div>
+                                                    {canColor && <div className={"sp-list-actions"}>
+                                                        <button className={"sp-chip small" + (ownColor ? " active" : "")}
+                                                            aria-expanded={colorLight === light.entity_id}
+                                                            onClick={() => setColorLight(colorLight === light.entity_id ? null : light.entity_id)}>
+                                                            {ownColor && <span aria-hidden={true} style={{display: "inline-block", width: 14, height: 14, borderRadius: "50%", marginRight: 6, background: rgbToHex(xyToRgb({x: xy[0], y: xy[1]}))}}/>}
+                                                            {t(ownColor ? "light_own_color" : "light_preset_color")}
+                                                        </button>
+                                                        {ownColor && <button className={"sp-chip small"} onClick={() => {
+                                                            const next = {...lightColors};
+                                                            delete next[light.entity_id];
+                                                            setLightColors(next);
+                                                            setColorLight(null);
+                                                        }}>{t("light_reset_color")}</button>}
+                                                    </div>}
+                                                    {canColor && colorLight === light.entity_id && <>
+                                                        <div className={"sp-secondary sp-small"}>{t("light_color_help")}</div>
+                                                        <ColorEditor t={t} value={{x: xy[0], y: xy[1]}} onChange={c =>
+                                                            setLightColors(prev => ({...prev, [light.entity_id]: [c.x, c.y]}))}/>
+                                                    </>}
                                                     <div className={"sp-list-actions"}>
                                                         {
                                                             musicOn && (["main", "accent"] as const).map(role => (
@@ -741,6 +780,7 @@ export function draftFromScene(scene: SavedScene, tun: Tunables, areaId: string 
         keepGroups: scene.keep_groups ?? [],
         optional: scene.optional ?? [],
         lightBrightness: scene.light_brightness ?? {},
+        lightColors: scene.light_colors ?? {},
         music: scene.music,
         gradient: scene.gradient
     };

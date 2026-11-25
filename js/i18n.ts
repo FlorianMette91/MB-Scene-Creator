@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): panel texts in English and German (German when Home Assistant runs in German)
 
 const EN = {
@@ -90,6 +91,10 @@ const EN = {
     delete_confirm: "Delete saved scene \"{name}\"?",
     name: "Name",
     lights_heading: "Lights of this scene",
+    light_own_color: "Own color",
+    light_preset_color: "Choose lamp color",
+    light_reset_color: "Use preset color",
+    light_color_help: "Own color and saturation stay fixed, also in dynamic scenes. White-only lamps use the closest white tone.",
     lights_help: "Brightness in percent: empty = scene brightness, 0 = turned off when the scene starts.",
     only_if_on: "Only if on",
     only_if_on_help: "Takes part only if it is on when the scene starts, and joins later when it is turned on.",
@@ -304,6 +309,10 @@ const DE: {[K in Key]: string} = {
     delete_confirm: "Gespeicherte Szene „{name}“ löschen?",
     name: "Name",
     lights_heading: "Lampen dieser Szene",
+    light_own_color: "Eigene Farbe",
+    light_preset_color: "Lampenfarbe wählen",
+    light_reset_color: "Vorlagenfarbe verwenden",
+    light_color_help: "Eigene Farbe und Sättigung bleiben auch in dynamischen Szenen fest. Reine Weißlichtlampen verwenden den nächstliegenden Weißton.",
     lights_help: "Helligkeit in Prozent: leer = Szenenhelligkeit, 0 = beim Start der Szene ausschalten.",
     only_if_on: "Nur wenn an",
     only_if_on_help: "Macht nur mit, wenn sie beim Start der Szene an ist, und kommt dazu, sobald sie eingeschaltet wird.",

@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): offers the import from Scene Presets (saved scenes, own presets,
 // scene entities with their IDs and areas) when it is installed or its data is still there
 
@@ -19,7 +20,7 @@ export const ImportBanner: React.FunctionComponent<{
     const [error, setError] = useState<string>("");
     const [hidden, setHidden] = useState<boolean>(() => {
         try {
-            return sessionStorage.getItem("scene_studio_import_later") === "1";
+            return sessionStorage.getItem("mb_scene_creator_import_later") === "1";
         } catch {
             return false;
         }
@@ -30,7 +31,7 @@ export const ImportBanner: React.FunctionComponent<{
         if (!isAdmin) {
             return;
         }
-        hass.callWS({type: "scene_studio/import_status"}).then((s: Status) => setStatus(s)).catch(() => setStatus(null));
+        hass.callWS({type: "mb_scene_creator/import_status"}).then((s: Status) => setStatus(s)).catch(() => setStatus(null));
     }, [isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (result) {
@@ -48,7 +49,7 @@ export const ImportBanner: React.FunctionComponent<{
     const run = () => {
         setBusy(true);
         setError("");
-        hass.callWS({type: "scene_studio/import", take_over_entities: takeOver}).then((r: any) => {
+        hass.callWS({type: "mb_scene_creator/import", take_over_entities: takeOver}).then((r: any) => {
             setResult(t("import_done", {scenes: r.scenes, entities: r.entities}));
             setStatus(null);
             setOpen(false);
@@ -74,7 +75,7 @@ export const ImportBanner: React.FunctionComponent<{
                         <button className={"sp-btn text"} onClick={() => {
                             setHidden(true);
                             try {
-                                sessionStorage.setItem("scene_studio_import_later", "1");
+                                sessionStorage.setItem("mb_scene_creator_import_later", "1");
                             } catch {
                                 /* only for this session anyway */
                             }
@@ -109,7 +110,7 @@ export const ImportBanner: React.FunctionComponent<{
 /** Favorites, chosen lights and settings of the Scene Presets panel (same browser) are taken over once. */
 export function importBrowserSettings(): void {
     try {
-        if (localStorage.getItem("scene_studio_browser_imported")) {
+        if (localStorage.getItem("mb_scene_creator_browser_imported")) {
             return;
         }
         const keys: Array<string> = [];
@@ -120,13 +121,13 @@ export function importBrowserSettings(): void {
             }
         }
         keys.forEach(key => {
-            const newKey = "scene_studio_" + key.slice("scene_presets_".length);
+            const newKey = "mb_scene_creator_" + key.slice("scene_presets_".length);
             const value = localStorage.getItem(key);
             if (value !== null && localStorage.getItem(newKey) === null) {
                 localStorage.setItem(newKey, value);
             }
         });
-        localStorage.setItem("scene_studio_browser_imported", "1");
+        localStorage.setItem("mb_scene_creator_browser_imported", "1");
     } catch {
         /* browser storage not available: nothing to take over */
     }

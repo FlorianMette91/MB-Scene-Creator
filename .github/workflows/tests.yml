@@ -1,0 +1,25 @@
+name: Tests and frontend build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check committed frontend bundle
+        run: git diff --exit-code -- custom_components/mb_scene_creator/frontend/mb_scene_creator_panel.js
+      - run: pip install pytest-homeassistant-custom-component==0.13.316
+      - run: pytest -q

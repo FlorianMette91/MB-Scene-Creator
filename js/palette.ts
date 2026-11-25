@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): picks the dominant colors of a photo for a light preset and converts
 // between sRGB and CIE xy (the color space the presets use); hue/saturation and color temperature
 // (white tones) for the color picker of presets.

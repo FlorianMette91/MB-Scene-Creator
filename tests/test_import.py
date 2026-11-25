@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Import from Scene Presets: saved scenes, own presets, scene entities with their IDs and areas."""
 
 import json
@@ -69,18 +70,18 @@ async def test_import_takes_over_entities(hass: HomeAssistant, hass_ws_client, m
     await setup(hass, monkeypatch)
     client = await hass_ws_client(hass)
 
-    r = await ws(client, {"type": "scene_studio/import_status"})
+    r = await ws(client, {"type": "mb_scene_creator/import_status"})
     assert r["success"], r
     assert r["result"]["available"] and r["result"]["new_scenes"] == 2 and r["result"]["custom_files"] == 2
 
-    result = await hass.services.async_call("scene_studio", "import_scene_presets", {}, blocking=True, return_response=True)
+    result = await hass.services.async_call("mb_scene_creator", "import_scene_presets", {}, blocking=True, return_response=True)
     await hass.async_block_till_done()
     assert result["scenes"] == 2 and result["entities"] == 2 and result["custom_files"] == 2
 
     registry = er.async_get(hass)
     for entity_id in ("scene.living_room_relax", "scene.living_room_aurora"):
         entry = registry.async_get(entity_id)
-        assert entry is not None and entry.platform == "scene_studio", entity_id
+        assert entry is not None and entry.platform == "mb_scene_creator", entity_id
         assert entry.area_id == area.id
         assert hass.states.get(entity_id) is not None
     assert registry.async_get("scene.living_room_relax").labels == {"evening"}
@@ -98,9 +99,9 @@ async def test_import_takes_over_entities(hass: HomeAssistant, hass_ws_client, m
     assert os.path.exists(os.path.join(userdata.CUSTOM_DIR, "assets", "user", "beach.jpg"))
 
     # a second import brings nothing new
-    result = await hass.services.async_call("scene_studio", "import_scene_presets", {}, blocking=True, return_response=True)
+    result = await hass.services.async_call("mb_scene_creator", "import_scene_presets", {}, blocking=True, return_response=True)
     assert result["scenes"] == 0 and result["skipped"] == 2
-    r = await ws(client, {"type": "scene_studio/import_status"})
+    r = await ws(client, {"type": "mb_scene_creator/import_status"})
     assert not r["result"]["available"]
 
 
@@ -109,20 +110,20 @@ async def test_import_without_taking_over(hass: HomeAssistant, hass_ws_client, m
     await setup(hass, monkeypatch)
     client = await hass_ws_client(hass)
 
-    r = await ws(client, {"type": "scene_studio/import", "take_over_entities": False})
+    r = await ws(client, {"type": "mb_scene_creator/import", "take_over_entities": False})
     assert r["success"], r
     await hass.async_block_till_done()
     assert r["result"]["scenes"] == 2 and r["result"]["entities"] == 0
 
     registry = er.async_get(hass)
-    # Scene Presets keeps its entities and stays enabled, Scene Studio gets its own
+    # Scene Presets keeps its entities and stays enabled, MB Scene Creator gets its own
     assert registry.async_get("scene.living_room_relax").platform == "scene_presets"
     assert hass.config_entries.async_get_entry(old_entry.entry_id).disabled_by is None
-    assert registry.async_get_entity_id("scene", "scene_studio", "saved_scene_aaa") is not None
+    assert registry.async_get_entity_id("scene", "mb_scene_creator", "saved_scene_aaa") is not None
 
 
 async def test_nothing_to_import(hass: HomeAssistant, hass_ws_client, monkeypatch, userdata):
     await setup(hass, monkeypatch)
     client = await hass_ws_client(hass)
-    r = await ws(client, {"type": "scene_studio/import_status"})
+    r = await ws(client, {"type": "mb_scene_creator/import_status"})
     assert r["success"] and not r["result"]["available"] and r["result"]["scenes"] == 0

@@ -1,6 +1,6 @@
 # Panel
 
-Open **Scene Studio** in the Home Assistant sidebar. The panel has two tabs:
+Open **MB Scene Creator** in the Home Assistant sidebar. The panel has two tabs:
 
 - **Scenes** – your saved scenes, grouped by room.
 - **Presets** – all presets, to try them on your lights and to save new scenes.
@@ -42,7 +42,7 @@ side panel; on phones the room chips are on top and the editor fills the screen.
   a finger, then **Done**. **Same order in all rooms** sorts the scenes of every other room the same way,
   matched by the name without the room (*Bright*, *Dimmed*, …); scenes only one room has go to the end.
   The order is stored with the scenes: room cards show the same order, editing a scene keeps its place,
-  new scenes come last. (`scene_studio/set_scene_order`, attribute `order` of the scene entities)
+  new scenes come last. (`mb_scene_creator/set_scene_order`, attribute `order` of the scene entities)
 
 ## Presets tab
 

@@ -1,3 +1,4 @@
+# Modified for MB Scene Creator (2026): independent integration namespace.
 """Targets with an "exclude" block (Home Assistant 2026.11): the excluded lights are left out (#16)."""
 
 import pytest
@@ -49,7 +50,7 @@ async def _home(hass, monkeypatch):
 async def _lit(hass, calls, targets, **extra):
     calls.clear()
     await hass.services.async_call(
-        "scene_studio", "apply_preset", {"preset_id": PRESET, "targets": targets, **extra}, blocking=True)
+        "mb_scene_creator", "apply_preset", {"preset_id": PRESET, "targets": targets, **extra}, blocking=True)
     await hass.async_block_till_done()
     return sorted(c["entity_id"] for c in calls)
 
@@ -72,14 +73,14 @@ async def test_the_exclude_block_leaves_lights_out(hass: HomeAssistant, monkeypa
         == ["light.hallway_ceiling", "light.office_ceiling", "light.office_lamp"]
     # a group in the exclude block leaves out its members
     assert await _lit(hass, calls, {"area_id": both, "exclude": {"entity_id": "light.ceilings"}}) == ["light.hallway_lamp", "light.office_lamp"]
-    # together with Scene Studio's own exclude
+    # together with MB Scene Creator's own exclude
     assert await _lit(hass, calls, {"area_id": both, "exclude": {"area_id": hallway}}, exclude=["light.office_lamp"]) == ["light.office_ceiling"]
     # an empty block changes nothing
     assert await _lit(hass, calls, {"area_id": both, "exclude": {}}) == everything
 
     # the panel lists the same lights
     client = await hass_ws_client(hass)
-    await client.send_json_auto_id({"type": "scene_studio/resolve_targets",
+    await client.send_json_auto_id({"type": "mb_scene_creator/resolve_targets",
                                     "targets": {"area_id": both, "exclude": {"entity_id": ["light.office_ceiling", "light.hallway_ceiling"]}}})
     lights = (await client.receive_json())["result"]["lights"]
     assert sorted(l["entity_id"] for l in lights) == ["light.hallway_lamp", "light.office_lamp"]
@@ -88,7 +89,7 @@ async def test_the_exclude_block_leaves_lights_out(hass: HomeAssistant, monkeypa
 async def test_a_saved_scene_with_an_exclude_block(hass: HomeAssistant, monkeypatch, userdata):
     calls, areas, _devices, _night = await _home(hass, monkeypatch)
     both = [areas.async_get_area_by_name("office").id, areas.async_get_area_by_name("hallway").id]
-    saved = await hass.services.async_call("scene_studio", "save_scene", {
+    saved = await hass.services.async_call("mb_scene_creator", "save_scene", {
         "name": "Evening", "preset_id": PRESET,
         "targets": {"area_id": both, "exclude": {"entity_id": ["light.office_ceiling", "light.hallway_ceiling"]}},
     }, blocking=True, return_response=True)

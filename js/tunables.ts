@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Added by andrejem (2026): settings of a preset application (once or dynamic) and their conversion
 // to the apply_preset / start_dynamic_scene service calls and from saved scenes
 
@@ -282,5 +283,5 @@ export const presetImage = (preset: any): string | undefined => {
     if (!preset?.img) {
         return undefined;
     }
-    return preset.img_url ?? "/assets/scene_studio/" + preset.img;
+    return preset.img_url ?? "/assets/mb_scene_creator/" + preset.img;
 };

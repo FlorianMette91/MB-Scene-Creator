@@ -1,3 +1,4 @@
+// Modified for MB Scene Creator (2026): independent integration namespace.
 // Modified by andrejem (2026): optional action icon (e.g. edit) on tiles, on the left when the tile
 // also has the favorite star; badge (e.g. "dynamic"), active state and a dashed "new" tile;
 // with a mouse the icons only show on hover (a favorite keeps its star), muted look for hidden presets
