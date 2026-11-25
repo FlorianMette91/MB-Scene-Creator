@@ -96,3 +96,10 @@ The editor works on its own copy of the scene; the *Presets* tab is not changed 
 - Settings of the scene that are not shown are kept when saving.
 
 <img src="../img/scene-lights.png" width="320" alt="Lights of this scene">
+
+## MB Scene Creator branding
+
+The sidebar uses the MB monogram with three light points. It inherits the Home Assistant
+theme color, while the integration logo uses cyan, violet and amber on a dark background.
+After updating to 0.1.1, restart Home Assistant and reload the page or Companion app
+to load the new versioned icon set. The vector originals are in `assets/logo/`.

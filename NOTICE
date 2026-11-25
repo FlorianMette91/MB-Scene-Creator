@@ -35,3 +35,6 @@ Upstream commit: 9b8ded1a71cae18901b9ac0392bb6710aa8604f1
 Additional changes: independent integration domain mb_scene_creator, panel, storage,
 services and room card; per-light color and saturation overrides; own release workflow.
 Original attribution, license and asset credits are retained.
+
+MB Scene Creator 0.1.1: original MB monogram and three-light branding, including
+theme-aware sidebar path and integration PNG icons, created for this project (2026).
