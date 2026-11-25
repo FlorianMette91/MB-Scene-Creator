@@ -1,5 +1,7 @@
 # MB Scene Creator
 
+<img src="https://raw.githubusercontent.com/FlorianMette91/MB-Scene-Creator/main/custom_components/mb_scene_creator/brand/icon%402x.png" alt="MB Scene Creator Logo" width="160" height="160">
+
 Eigene Lichtszenen für Home Assistant – mit **Farbe, Farbsättigung und Helligkeit pro Lampe**.
 
 Dieses eigenständig gepflegte Projekt von [FlorianMette91](https://github.com/FlorianMette91)
